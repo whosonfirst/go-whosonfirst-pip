@@ -11,10 +11,12 @@ func main() {
 	flag.Parse()
 	args := flag.Args()
 
-	// pip := PointInPolygon()
+	p := pip.PointInPolygon()
 
 	for _, path := range args {
-		//pip.ImportFile(path)
 		fmt.Println(path)
+		p.ImportFile(path)
 	}
+
+	fmt.Println(p.Rtree.Size())
 }

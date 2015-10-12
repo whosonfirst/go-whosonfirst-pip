@@ -2,7 +2,7 @@ package pip
 
 import (
 	"github.com/dhconnelly/rtreego"
-	geojson "github.com/whosonfirst/go-whosonfirst-geojson/whosonfirst"
+	"github.com/whosonfirst/go-whosonfirst-geojson"
 )
 
 type WOFPointInPolygon struct {
@@ -26,16 +26,17 @@ func (wof WOFPointInPolygon) ImportFile(source string) error {
 		return parse_err
 	}
 
-	rect, bounds_err := feature.Bounds()
+	bounds, bounds_err := feature.Bounds()
 
 	if bounds_err != nil {
 		return bounds_err
 	}
 
-	wof.Rtree.Insert(rect)
+	wof.Rtree.Insert(bounds)
 	return nil
 }
 
+/*
 func (wof WOFPointInPolygon) LookupPoint(lat float64, lon float64) {
 
 	q := rtreego.Point{lat, lon}
@@ -43,3 +44,4 @@ func (wof WOFPointInPolygon) LookupPoint(lat float64, lon float64) {
 
 	results = wof.Rtree.SearchNearestNeighbors(q, k)
 }
+*/
