@@ -3,6 +3,7 @@ package pip
 import (
 	"github.com/dhconnelly/rtreego"
 	"github.com/whosonfirst/go-whosonfirst-geojson"
+	_ "github.com/kellydunn/golang-geo"
 )
 
 type WOFPointInPolygon struct {
@@ -77,4 +78,34 @@ func (p WOFPointInPolygon) FilterByPlacetype(results []*geojson.WOFSpatial, plac
 	}
 
 	return filtered
+}
+
+// maybe take a list of *geojson.WOFSpatial instead...
+
+func (p WOFPointInPolygon) Contained (lat float64, lon float64, results []rtreego.Spatial) []rtreego.Spatial {
+
+        contained := make([]rtreego.Spatial, 0)
+
+	/*
+
+	pt := geo.NewPoint(lat, lon)
+
+	for _, r := range results {
+
+	    // get ID
+	    // get path
+	    // open file
+	    // read geometry in to a geo.Polygon
+	    // see also: https://github.com/kellydunn/golang-geo/blob/master/polygon_test.go#L138
+	    // poly := WUB WUB WUB
+
+	    if poly.Contains(pt) {
+	       contained = append(contained, r)
+	    }
+
+	}
+
+	*/
+
+	return contained
 }
