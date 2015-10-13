@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/whosonfirst/go-whosonfirst-geojson"
 	"github.com/whosonfirst/go-whosonfirst-pip"
 )
 
@@ -28,6 +29,11 @@ func main() {
 	results := p.GetByLatLon(lat, lon)
 
 	for i, r := range results {
-		fmt.Printf("result #%d is %s\n", i, r)
+
+	        // GIT IS WEIRD - maybe just wrap this in the GetByLatLon function
+	        // https://golang.org/doc/effective_go.html#interface_conversions
+		wof := r.(*geojson.WOFRTree)
+
+		fmt.Printf("result #%d is %s\n", i, wof.Name)
 	}		
 }
