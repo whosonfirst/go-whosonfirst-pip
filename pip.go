@@ -31,13 +31,13 @@ func (p WOFPointInPolygon) IndexGeoJSONFile(source string) error {
 
 func (p WOFPointInPolygon) IndexGeoJSONFeature(feature geojson.WOFFeature) error {
 
-	bounds, bounds_err := feature.Bounds()
+	spatial, spatial_err := feature.EnSpatialize()
 
-	if bounds_err != nil {
-		return bounds_err
+	if spatial_err != nil {
+		return spatial_err
 	}
 
-	p.Rtree.Insert(bounds)
+	p.Rtree.Insert(spatial)
 	return nil
 }
 
@@ -50,14 +50,14 @@ func (p WOFPointInPolygon) GetByLatLon(lat float64, lon float64) []rtreego.Spati
 	return results
 }
 
-func (p WOFPointInPolygon) InflateResults(results []rtreego.Spatial) []*geojson.WOFRTree {
+func (p WOFPointInPolygon) InflateResults(results []rtreego.Spatial) []*geojson.WOFSpatial {
 
-     inflated := make([]*geojson.WOFRTree, 0)
+     inflated := make([]*geojson.WOFSpatial, 0)
 
 	for _, r := range results {
 
 	        // https://golang.org/doc/effective_go.html#interface_conversions
-		wof := r.(*geojson.WOFRTree)
+		wof := r.(*geojson.WOFSpatial)
 		inflated = append(inflated, wof)
         }
 
