@@ -49,3 +49,17 @@ func (p WOFPointInPolygon) GetByLatLon(lat float64, lon float64) []rtreego.Spati
 	results := p.Rtree.SearchIntersect(bbox)
 	return results
 }
+
+func (p WOFPointInPolygon) InflateResults(results []rtreego.Spatial) []*geojson.WOFRTree {
+
+     inflated := make([]*geojson.WOFRTree, 0)
+
+	for _, r := range results {
+
+	        // https://golang.org/doc/effective_go.html#interface_conversions
+		wof := r.(*geojson.WOFRTree)
+		inflated = append(inflated, wof)
+        }
+
+	return inflated
+}
