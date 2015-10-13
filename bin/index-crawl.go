@@ -38,14 +38,14 @@ func main() {
 		err := p.IndexGeoJSONFile(path)
 
 		if err != nil {
-		   fmt.Printf("failed to index %s because: %s\n", path, err)
+			fmt.Printf("failed to index %s because: %s\n", path, err)
 		}
 
 		return nil
 	}
 
 	c.Crawl(callback)
-		
+
 	fmt.Printf("indexed %d records\n", p.Rtree.Size())
 
 	lat := 37.791614
@@ -59,5 +59,5 @@ func main() {
 	for i, wof := range inflated {
 
 		fmt.Printf("result #%d is %s\n", i, wof.Name)
-	}		
+	}
 }

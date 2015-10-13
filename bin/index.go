@@ -30,5 +30,14 @@ func main() {
 
 	for i, wof := range inflated {
 		fmt.Printf("result #%d is %s\n", i, wof.Name)
-	}		
+	}
+
+	fmt.Println("filter results by locality")
+
+	filtered := p.FilterByPlacetype(inflated, "locality")
+
+	for i, f := range filtered {
+		fmt.Printf("filtered result #%d is %s\n", i, f.Name)
+	}
+
 }

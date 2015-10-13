@@ -43,10 +43,10 @@ func (p WOFPointInPolygon) IndexGeoJSONFeature(feature geojson.WOFFeature) error
 	return nil
 }
 
-func (p WOFPointInPolygon) GetByLatLon(lat float64, lon float64) []rtreego.Spatial{
+func (p WOFPointInPolygon) GetByLatLon(lat float64, lon float64) []rtreego.Spatial {
 
 	pt := rtreego.Point{lon, lat}
-	bbox, _ := rtreego.NewRect(pt, []float64{0.0001, 0.0001})	// how small can I make this?
+	bbox, _ := rtreego.NewRect(pt, []float64{0.0001, 0.0001}) // how small can I make this?
 
 	results := p.Rtree.SearchIntersect(bbox)
 	return results
@@ -54,14 +54,27 @@ func (p WOFPointInPolygon) GetByLatLon(lat float64, lon float64) []rtreego.Spati
 
 func (p WOFPointInPolygon) InflateResults(results []rtreego.Spatial) []*geojson.WOFSpatial {
 
-     inflated := make([]*geojson.WOFSpatial, 0)
+	inflated := make([]*geojson.WOFSpatial, 0)
 
 	for _, r := range results {
 
-	        // https://golang.org/doc/effective_go.html#interface_conversions
+		// https://golang.org/doc/effective_go.html#interface_conversions
 		wof := r.(*geojson.WOFSpatial)
 		inflated = append(inflated, wof)
-        }
+	}
 
 	return inflated
+}
+
+func (p WOFPointInPolygon) FilterByPlacetype(results []*geojson.WOFSpatial, placetype string) []*geojson.WOFSpatial {
+
+	filtered := make([]*geojson.WOFSpatial, 0)
+
+	for _, r := range results {
+	        if (r.Placetype == placetype){
+		   filtered = append(filtered, r)
+		}   
+	}
+
+	return filtered
 }
