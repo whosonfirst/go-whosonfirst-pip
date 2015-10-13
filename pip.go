@@ -37,6 +37,8 @@ func (p WOFPointInPolygon) IndexGeoJSONFeature(feature geojson.WOFFeature) error
 		return spatial_err
 	}
 
+	// fmt.Printf("%v\n", spatial.Bounds())
+
 	p.Rtree.Insert(spatial)
 	return nil
 }

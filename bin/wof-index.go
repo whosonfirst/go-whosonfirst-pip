@@ -35,7 +35,11 @@ func main() {
 		}
 
 		fmt.Printf("index %s\n", path)
-		p.IndexGeoJSONFile(path)
+		err := p.IndexGeoJSONFile(path)
+
+		if err != nil {
+		   fmt.Printf("failed to index %s because: %s\n", path, err)
+		}
 
 		return nil
 	}
