@@ -10,7 +10,7 @@ Expermimental point-in-polygon library for Who's On First documents
 export GOPATH=`pwd`
 ```
 
-(Adjust accordingly if you are not use a different shell than Bash.)
+_Adjust accordingly if you are not use a different shell than Bash._
 
 ### Dependencies
 
@@ -121,10 +121,11 @@ If you're curious how the sausage is made.
 
 ### HTTP Ponies
 
-There is also a standalone HTTP server for performing point-in-polygon lookups. It is instantiated with one or more "meta" CSV files, like this:
+There is also a standalone HTTP server for performing point-in-polygon lookups. It is instantiated with a `source` parameter and one or more "meta" CSV files, like this:
 
 ```
 $> ./bin/pip-server -source /usr/local/mapzen/whosonfirst-data/data /usr/local/mapzen/whosonfirst-data/meta/wof-neighbourhood-latest.csv
+indexed 49906 records in 47.895 seconds
 ```
 
 This is how you'd use it:
