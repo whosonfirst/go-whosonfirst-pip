@@ -10,7 +10,7 @@ Expermimental point-in-polygon library for Who's On First documents
 export GOPATH=`pwd`
 ```
 
-_Adjust accordingly if you are not use a different shell than Bash._
+_Adjust accordingly if you are using a shell other than Bash._
 
 ### Dependencies
 
@@ -150,7 +150,7 @@ $> curl 'http://localhost:8080?latitude=40.677524&longitude=-73.987343' | python
 
 ### When we say `geojson` in the context of Go-typing
 
-We are talking about the [go-whosonfirst-geojson](https://www.github.com/whosonfirst/go-whosonfirst-geojson) library
+We are talking about the [go-whosonfirst-geojson](https://www.github.com/whosonfirst/go-whosonfirst-geojson) library.
 
 ### Speed and performance
 
