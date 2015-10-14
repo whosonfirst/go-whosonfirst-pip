@@ -92,14 +92,27 @@ func (p WOFPointInPolygon) Contained (lat float64, lon float64, results []rtreeg
 
 	for _, r := range results {
 
+	    poly := &geo.Polygon{}
+
 	    // get ID
 	    // get path
 	    // open file
 	    // read geometry in to a geo.Polygon
-	    // see also: https://github.com/kellydunn/golang-geo/blob/master/polygon_test.go#L138
-	    // poly := WUB WUB WUB
 
-	    if poly.Contains(pt) {
+	    feature := WUB WUB WUB 
+	    polygons := feature.GeomToPolygons()
+
+	    var contained bool
+
+	    for _, poly in range polygons {
+
+	    	if poly.Contains(pt) {
+		   contained = true
+		   break
+		}
+	    }
+
+	    if contained {
 	       contained = append(contained, r)
 	    }
 

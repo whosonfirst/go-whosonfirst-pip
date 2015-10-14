@@ -7,7 +7,6 @@ self:   prep
 	cp *.go src/github.com/whosonfirst/go-whosonfirst-pip/
 
 deps:   self
-	go get -u "github.com/whosonfirst/go-whosonfirst-crawl"
 	go get -u "github.com/whosonfirst/go-whosonfirst-geojson"
 	go get -u "github.com/kellydunn/golang-geo"
 	go get -u "github.com/dhconnelly/rtreego"
