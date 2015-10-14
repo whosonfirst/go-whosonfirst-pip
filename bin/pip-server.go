@@ -93,6 +93,8 @@ func main() {
 			results, timings = p.GetByLatLonForPlacetype(lat, lon, placetype)
 		}
 
+		fmt.Printf("[timings] %f, %f (%s)\n", lat, lon, placetype)
+
 		for _, t := range timings {
 		    fmt.Printf("[timing] %s: %f\n", t.Event, t.Duration)
 		}

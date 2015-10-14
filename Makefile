@@ -16,6 +16,7 @@ fmt:
 	go fmt bin/*.go
 	go fmt *.go
 
-index: 	self
+bin: 	self
 	go build -o bin/index bin/index.go
 	go build -o bin/index-csv bin/index-csv.go
+	go build -o bin/pip-server bin/pip-server.go
