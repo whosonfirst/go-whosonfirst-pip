@@ -47,7 +47,7 @@ for _, t := range timings {
 }
 ```
 
-`results` contains a list of `geojson.WOFSpatial` objects and `timings` contains a list of `pip.WOFPointInPolygonTiming` objects. 
+`results` contains a list of `geojson.WOFSpatial` object-interface-struct-things and `timings` contains a list of `pip.WOFPointInPolygonTiming` object-interface-struct-things. 
 
 ### What's going on under the hood
 
@@ -112,8 +112,8 @@ We are talking about the [go-whosonfirst-geojson](https://www.github.com/whosonf
 This is how it works now:
 
 1. We are using the [rtreego](https://www.github.com/dhconnelly/rtreego) library to do most of the heavy lifting and filtering
-2. Results from the rtreego `SearchIntersect` method are "inflated" and recast as geojson `WOFSpatial` objects
-3. We are performing a final containment check on the results by reading the corresponding GeoJSON file and reading its geometry in to one or more [golang-geo](https://www.github.com/kellydunn/golang-geo) `Polygon` objects. Each of these objects calls its `Contains` method on an input coordinate.
+2. Results from the rtreego `SearchIntersect` method are "inflated" and recast as geojson `WOFSpatial` object-interface-struct-things
+3. We are performing a final containment check on the results by reading the corresponding GeoJSON file and reading its geometry in to one or more [golang-geo](https://www.github.com/kellydunn/golang-geo) `Polygon` object-interface-struct-things. Each of these object-interface-struct-things calls its `Contains` method on an input coordinate.
 
 This is how long it takes reverse-geocoding a point in Brooklyn, using an index of all the countries in Who's On First:
 
@@ -124,7 +124,7 @@ This is how long it takes reverse-geocoding a point in Brooklyn, using an index 
 [timing] contained: 0.115600
 ```
 
-These numbers are still a bit vague and misleading. For example it's not clear (because it hasn't been measured yet) where most of the work in that 0.1 seconds is happening. Is it reading the GeoJSON file? It is converting the file's geometry in to Polygon objects? It is actually testing a single coordinate against a giant bag of coordinates? I don't know, yet.
+These numbers are still a bit vague and misleading. For example it's not clear (because it hasn't been measured yet) where most of the work in that 0.1 seconds is happening. Is it reading the GeoJSON file? It is converting the file's geometry in to Polygon object-interface-struct-things? It is actually testing a single coordinate against a giant bag of coordinates? I don't know, yet.
 
 ## See also
 
