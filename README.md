@@ -47,7 +47,7 @@ for _, t := range timings {
 }
 ```
 
-`results` contains a list of `geojson.WOFSpatail` objects and `timings` contains a list of `pip.WOFPointInPolygonTiming` objects. 
+`results` contains a list of `geojson.WOFSpatial` objects and `timings` contains a list of `pip.WOFPointInPolygonTiming` objects. 
 
 ### What's going on under the hood
 
@@ -103,12 +103,16 @@ $> curl 'http://localhost:8080?latitude=40.677524&longitude=-73.987343' | python
 
 ## Assumptions, caveats and known-knowns
 
+### When we say "geojson" in the context of Go-typing
+
+We are talk about the [go-whosonfirst-geojson](https://www.github.com/whosonfirst/go-whosonfirst-geojson) library
+
 ### Speed and performance
 
 This is how it works now:
 
 1. We are using the [rtreego](https://www.github.com/dhconnelly/rtreego) library to do most of the heavy lifting and filtering
-2. Results from the rtreego `SearchIntersect` method are "inflated" and recast as [wof-geojson](https://www.github.com/whosonfirst/go-whosonfirst-geojson) `WOFSpatial` objects
+2. Results from the rtreego `SearchIntersect` method are "inflated" and recast as geojson `WOFSpatial` objects
 3. We are performing a final containment check on the results by reading the corresponding GeoJSON file and reading its geometry in to one or more [golang-geo](https://www.github.com/kellydunn/golang-geo) `Polygon` objects. Each of these objects calls its `Contains` method on an input coordinate.
 
 This is how long it takes reverse-geocoding a point in Brooklyn, using an index of all the countries in Who's On First:
