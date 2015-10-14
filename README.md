@@ -25,7 +25,7 @@ meta_file := "/usr/local/mapzen/whosonfirst-data/meta/wof-locality-latest.csv"
 p.IndexMetaJSONFile(meta_file)
 ```
 
-You can index individual GeoJSON files or Who's On First "meta" files, which are CSV files with pointers to individual Who's On First records.
+You can index individual GeoJSON files or [Who's On First "meta" files](https://github.com/whosonfirst/whosonfirst-data/tree/master/meta) which are just CSV files with pointers to individual Who's On First records.
 
 The `PointInPolygon` function takes as its sole argument the root path where your Who's On First documents are stored. This is because those files are used to perform a final "containment" check. The details of this are discussed further below.
 
@@ -72,6 +72,8 @@ for i, f := range contained {
 }
 
 ```
+
+If you're curious how the sausage is made.
 
 ### HTTP Ponies
 
@@ -125,3 +127,4 @@ These numbers are still a bit vague and misleading. For example it's not clear (
 * https://www.github.com/dhconnelly/rtreego
 * https://www.github.com/kellydunn/golang-geo
 * https://www.github.com/whosonfirst/go-whosonfirst-geojson
+* https://whosonfirst.mapzen.com/data/
