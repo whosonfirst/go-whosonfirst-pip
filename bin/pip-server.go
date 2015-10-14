@@ -83,13 +83,18 @@ func main() {
 		}
 
 		results := make([]*geojson.WOFSpatial, 0)
+		timings := make([]*pip.WOFPointInPolygonTiming, 0)
 
 		// please validate placetype here...
 
 		if placetype == "" {
-			results = p.GetByLatLon(lat, lon)
+			results, timings = p.GetByLatLon(lat, lon)
 		} else {
-			results = p.GetByLatLonForPlacetype(lat, lon, placetype)
+			results, timings = p.GetByLatLonForPlacetype(lat, lon, placetype)
+		}
+
+		for _, t := range timings {
+		    fmt.Printf("[timing] %s: %f\n", t.Event, t.Duration)
 		}
 
 		js, err := json.Marshal(results)

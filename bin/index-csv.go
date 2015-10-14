@@ -80,7 +80,7 @@ func main() {
 
 	for _, path := range args {
 
-		IndexCSVFile(p, path, *source, *offset)
+		p.IndexMetaFile(path, *offset)
 	}
 
 	t2 := float64(time.Since(t1)) / 1e9
@@ -92,7 +92,7 @@ func main() {
 
 	fmt.Printf("get by lat lon %f, %f\n", lat, lon)
 
-	results := p.GetByLatLon(lat, lon)
+	results, _ := p.GetByLatLon(lat, lon)
 
 	for i, wof := range results {
 

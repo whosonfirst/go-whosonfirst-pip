@@ -61,7 +61,7 @@ func main() {
 		fmt.Printf("contained result #%d is %s\n", i, f.Name)
 	}
 
-	simple := p.GetByLatLon(lat, lon)
+	simple, _ := p.GetByLatLon(lat, lon)
 
 	for i, f := range simple {
 		fmt.Printf("simple result #%d is %s\n", i, f.Name)

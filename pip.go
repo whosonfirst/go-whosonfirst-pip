@@ -5,11 +5,18 @@ import (
        "path"
        "io"
        "os"
+       _ "fmt"
+       "time"
 	rtreego "github.com/dhconnelly/rtreego"
 	geo "github.com/kellydunn/golang-geo"
 	geojson "github.com/whosonfirst/go-whosonfirst-geojson"
 	utils "github.com/whosonfirst/go-whosonfirst-utils"
 )
+
+type WOFPointInPolygonTiming struct {
+     Event string
+     Duration float64
+}
 
 type WOFPointInPolygon struct {
 	Rtree  *rtreego.Rtree
@@ -119,21 +126,46 @@ func (p WOFPointInPolygon) InflateSpatialResults(results []rtreego.Spatial) []*g
 	return inflated
 }
 
-func (p WOFPointInPolygon) GetByLatLon(lat float64, lon float64) []*geojson.WOFSpatial {
+func (p WOFPointInPolygon) GetByLatLon(lat float64, lon float64) ([]*geojson.WOFSpatial, []*WOFPointInPolygonTiming) {
+
+     	timings := make([]*WOFPointInPolygonTiming, 0)
+
+	t1a := time.Now()
 
 	intersects := p.GetIntersectsByLatLon(lat, lon)
+
+	t1b := float64(time.Since(t1a)) / 1e9
+	timings = append(timings, &WOFPointInPolygonTiming{"intersects", t1b})
+
+	t2a := time.Now()
+
 	inflated := p.InflateSpatialResults(intersects)
+
+	t2b := float64(time.Since(t2a)) / 1e9
+	timings = append(timings, &WOFPointInPolygonTiming{"inflate", t2b})
+
+	t3a := time.Now()
+
 	contained := p.EnsureContained(lat, lon, inflated)
 
-	return contained
+	t3b := float64(time.Since(t3a)) / 1e9
+	timings = append(timings, &WOFPointInPolygonTiming{"contained", t3b})
+
+	return contained, timings
 }
 
-func (p WOFPointInPolygon) GetByLatLonForPlacetype(lat float64, lon float64, placetype string) []*geojson.WOFSpatial {
+func (p WOFPointInPolygon) GetByLatLonForPlacetype(lat float64, lon float64, placetype string) ([]*geojson.WOFSpatial, []*WOFPointInPolygonTiming) {
 
-	possible := p.GetByLatLon(lat, lon)
+	possible, timings := p.GetByLatLon(lat, lon)
+
+	t1a := time.Now()
+
 	filtered := p.FilterByPlacetype(possible, placetype)
 
-	return filtered
+	t1b := float64(time.Since(t1a)) / 1e9
+	timings = append(timings, &WOFPointInPolygonTiming{"placetype", t1b})
+
+	return filtered, timings
 }
 
 func (p WOFPointInPolygon) FilterByPlacetype(results []*geojson.WOFSpatial, placetype string) []*geojson.WOFSpatial {
