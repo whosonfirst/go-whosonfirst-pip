@@ -165,7 +165,7 @@ This is how it works now:
 
 1. We are using the [rtreego](https://www.github.com/dhconnelly/rtreego) library to do most of the heavy lifting and filtering.
 2. Results from the rtreego `SearchIntersect` method are "inflated" and recast as geojson `WOFSpatial` object-interface-struct-things.
-3. We are performing a final containment check on the results by reading the corresponding GeoJSON file and converting its geometry in to one or more [golang-geo](https://www.github.com/kellydunn/golang-geo) `Polygon` object-interface-struct-things. Each of these object-interface-struct-things calls its `Contains` method on an input coordinate.
+3. We are performing a final containment check on the results by reading each corresponding GeoJSON file and converting its geometry in to one or more [golang-geo](https://www.github.com/kellydunn/golang-geo) `Polygon` object-interface-struct-things. Each of these object-interface-struct-things calls its `Contains` method on an input coordinate.
 
 This is how long it takes reverse-geocoding a point in Brooklyn, using an index of all the countries in Who's On First:
 
