@@ -1,14 +1,14 @@
 package pip
 
 import (
-	"github.com/dhconnelly/rtreego"
-	"github.com/whosonfirst/go-whosonfirst-geojson"
-	"github.com/whosonfirst/go-whosonfirst-utils"
-	"github.com/kellydunn/golang-geo"
+	rtreego "github.com/dhconnelly/rtreego"
+	geo "github.com/kellydunn/golang-geo"
+	geojson "github.com/whosonfirst/go-whosonfirst-geojson"
+	utils "github.com/whosonfirst/go-whosonfirst-utils"
 )
 
 type WOFPointInPolygon struct {
-	Rtree *rtreego.Rtree
+	Rtree  *rtreego.Rtree
 	Source string
 }
 
@@ -17,7 +17,7 @@ func PointInPolygon(source string) *WOFPointInPolygon {
 	rt := rtreego.NewTree(2, 25, 50)
 
 	return &WOFPointInPolygon{
-		Rtree: rt,
+		Rtree:  rt,
 		Source: source,
 	}
 }
@@ -62,7 +62,9 @@ func (p WOFPointInPolygon) InflateSpatialResults(results []rtreego.Spatial) []*g
 
 	for _, r := range results {
 
+		// Go, you so wacky...
 		// https://golang.org/doc/effective_go.html#interface_conversions
+
 		wof := r.(*geojson.WOFSpatial)
 		inflated = append(inflated, wof)
 	}
@@ -72,7 +74,7 @@ func (p WOFPointInPolygon) InflateSpatialResults(results []rtreego.Spatial) []*g
 
 func (p WOFPointInPolygon) GetByLatLon(lat float64, lon float64) []*geojson.WOFSpatial {
 
-        intersects := p.GetIntersectsByLatLon(lat, lon)
+	intersects := p.GetIntersectsByLatLon(lat, lon)
 	inflated := p.InflateSpatialResults(intersects)
 	contained := p.Contained(lat, lon, inflated)
 
@@ -81,7 +83,7 @@ func (p WOFPointInPolygon) GetByLatLon(lat float64, lon float64) []*geojson.WOFS
 
 func (p WOFPointInPolygon) GetByLatLonForPlacetype(lat float64, lon float64, placetype string) []*geojson.WOFSpatial {
 
-     	possible := p.GetByLatLon(lat, lon)
+	possible := p.GetByLatLon(lat, lon)
 	filtered := p.FilterByPlacetype(possible, placetype)
 
 	return filtered
@@ -92,53 +94,58 @@ func (p WOFPointInPolygon) FilterByPlacetype(results []*geojson.WOFSpatial, plac
 	filtered := make([]*geojson.WOFSpatial, 0)
 
 	for _, r := range results {
-	        if (r.Placetype == placetype){
-		   filtered = append(filtered, r)
-		}   
+		if r.Placetype == placetype {
+			filtered = append(filtered, r)
+		}
 	}
 
 	return filtered
 }
 
-func (p WOFPointInPolygon) Contained (lat float64, lon float64, results []*geojson.WOFSpatial) []*geojson.WOFSpatial {
+func (p WOFPointInPolygon) Contained(lat float64, lon float64, results []*geojson.WOFSpatial) []*geojson.WOFSpatial {
 
-        contained := make([]*geojson.WOFSpatial, 0)
+	contained := make([]*geojson.WOFSpatial, 0)
 
 	pt := geo.NewPoint(lat, lon)
 
 	for _, wof := range results {
 
-	    // please cache me... somewhere... somehow...
-	    // (20151013/thisisaaronland)
+		// please cache me... somewhere... somehow...
+		// (20151013/thisisaaronland)
 
-	    id := wof.Id
-	    path := utils.Id2AbsPath(p.Source, id)
+		id := wof.Id
+		path := utils.Id2AbsPath(p.Source, id)
 
-	    feature, err := geojson.UnmarshalFile(path) 
+		feature, err := geojson.UnmarshalFile(path)
 
-	    if err != nil {
-	       // please log me
-	       continue
-	    }
-
-	    // basically return this from the cache (for wof.Id)
-	    // (20151013/thisisaaronland)
-
-	    polygons := feature.GeomToPolygons()
-
-	    is_contained := false
-
-	    for _, poly := range polygons {
-
-	    	if poly.Contains(pt) {
-		   is_contained = true
-		   break
+		if err != nil {
+			// please log me
+			continue
 		}
-	    }
 
-	    if is_contained {
-	       contained = append(contained, wof)
-	    }
+		// basically return this from the cache (for wof.Id)
+		// (20151013/thisisaaronland)
+
+		// it might also be nice to be able to return this as
+		// an iterator to save build large polygons but today
+		// we'll just assume that is yak-shaving on move along
+		// (20151013/thisisaaronland)
+
+		polygons := feature.GeomToPolygons()
+
+		is_contained := false
+
+		for _, poly := range polygons {
+
+			if poly.Contains(pt) {
+				is_contained = true
+				break
+			}
+		}
+
+		if is_contained {
+			contained = append(contained, wof)
+		}
 
 	}
 
