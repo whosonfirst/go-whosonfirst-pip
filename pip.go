@@ -1,6 +1,10 @@
 package pip
 
 import (
+       "encoding/csv"
+       "path"
+       "io"
+       "os"
 	rtreego "github.com/dhconnelly/rtreego"
 	geo "github.com/kellydunn/golang-geo"
 	geojson "github.com/whosonfirst/go-whosonfirst-geojson"
@@ -45,6 +49,49 @@ func (p WOFPointInPolygon) IndexGeoJSONFeature(feature geojson.WOFFeature) error
 	return nil
 }
 
+func (p WOFPointInPolygon) IndexMetaFile(csv_file string, offset int) error {
+
+	body, read_err := os.Open(csv_file)
+
+	if read_err != nil {
+	   	  return read_err
+	}
+
+	r := csv.NewReader(body)
+
+	for {
+		record, err := r.Read()
+
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+		   return err
+		}
+
+		// sudo my kingdom for a DictReader in Go...
+		// (20151013/thisisaaronland)
+
+		rel_path := record[offset]
+		abs_path := path.Join(p.Source, rel_path)
+
+		_, err = os.Stat(abs_path)
+
+		if os.IsNotExist(err) {
+			continue
+		}
+
+		index_err := p.IndexGeoJSONFile(abs_path)
+
+		if index_err != nil {
+		   return index_err
+		}
+	}
+
+	return nil
+}
+
 func (p WOFPointInPolygon) GetIntersectsByLatLon(lat float64, lon float64) []rtreego.Spatial {
 
 	pt := rtreego.Point{lon, lat}
@@ -76,7 +123,7 @@ func (p WOFPointInPolygon) GetByLatLon(lat float64, lon float64) []*geojson.WOFS
 
 	intersects := p.GetIntersectsByLatLon(lat, lon)
 	inflated := p.InflateSpatialResults(intersects)
-	contained := p.Contained(lat, lon, inflated)
+	contained := p.EnsureContained(lat, lon, inflated)
 
 	return contained
 }
@@ -102,7 +149,7 @@ func (p WOFPointInPolygon) FilterByPlacetype(results []*geojson.WOFSpatial, plac
 	return filtered
 }
 
-func (p WOFPointInPolygon) Contained(lat float64, lon float64, results []*geojson.WOFSpatial) []*geojson.WOFSpatial {
+func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*geojson.WOFSpatial) []*geojson.WOFSpatial {
 
 	contained := make([]*geojson.WOFSpatial, 0)
 

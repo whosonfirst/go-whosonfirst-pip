@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 )
 
 func main() {
@@ -30,14 +31,15 @@ func main() {
 
 	p := pip.PointInPolygon(*source)
 
+	t1 := time.Now()
+
 	for _, path := range args {
-		// this is index-csv and needs to be made
-		// a package method (20151014/thisisaaronland)
-		// p.IndexMetaFile(path, offset)
-		p.IndexGeoJSONFile(path)
+		p.IndexMetaFile(path, 12)
 	}
 
-	fmt.Printf("indexed %d records\n", p.Rtree.Size())
+	t2 := float64(time.Since(t1)) / 1e9
+
+	fmt.Printf("indexed %d records in %.3f seconds \n", p.Rtree.Size(), t2)
 
 	handler := func(rsp http.ResponseWriter, req *http.Request) {
 

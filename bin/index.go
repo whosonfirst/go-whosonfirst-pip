@@ -55,7 +55,7 @@ func main() {
 
 	fmt.Println("ensure contained")
 
-	contained := p.Contained(lat, lon, inflated)
+	contained := p.EnsureContained(lat, lon, inflated)
 
 	for i, f := range contained {
 		fmt.Printf("contained result #%d is %s\n", i, f.Name)
