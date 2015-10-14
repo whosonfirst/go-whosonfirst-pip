@@ -65,7 +65,7 @@ func main() {
 	args := flag.Args()
 
 	if *source == "" {
-		panic("missing source to sync")
+		panic("missing source")
 	}
 
 	_, err := os.Stat(*source)
@@ -74,7 +74,7 @@ func main() {
 		panic("source does not exist")
 	}
 
-	p := pip.PointInPolygon()
+	p := pip.PointInPolygon(*source)
 
 	t1 := time.Now()
 

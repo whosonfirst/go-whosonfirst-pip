@@ -3,19 +3,22 @@ package pip
 import (
 	"github.com/dhconnelly/rtreego"
 	"github.com/whosonfirst/go-whosonfirst-geojson"
-	_ "github.com/kellydunn/golang-geo"
+	"github.com/whosonfirst/go-whosonfirst-utils"
+	"github.com/kellydunn/golang-geo"
 )
 
 type WOFPointInPolygon struct {
 	Rtree *rtreego.Rtree
+	Source string
 }
 
-func PointInPolygon() *WOFPointInPolygon {
+func PointInPolygon(source string) *WOFPointInPolygon {
 
 	rt := rtreego.NewTree(2, 25, 50)
 
 	return &WOFPointInPolygon{
 		Rtree: rt,
+		Source: source,
 	}
 }
 
@@ -37,8 +40,6 @@ func (p WOFPointInPolygon) IndexGeoJSONFeature(feature geojson.WOFFeature) error
 	if spatial_err != nil {
 		return spatial_err
 	}
-
-	// fmt.Printf("%v\n", spatial.Bounds())
 
 	p.Rtree.Insert(spatial)
 	return nil
@@ -80,45 +81,47 @@ func (p WOFPointInPolygon) FilterByPlacetype(results []*geojson.WOFSpatial, plac
 	return filtered
 }
 
-// maybe take a list of *geojson.WOFSpatial instead...
+func (p WOFPointInPolygon) Contained (lat float64, lon float64, results []*geojson.WOFSpatial) []*geojson.WOFSpatial {
 
-func (p WOFPointInPolygon) Contained (lat float64, lon float64, results []rtreego.Spatial) []rtreego.Spatial {
-
-        contained := make([]rtreego.Spatial, 0)
-
-	/*
+        contained := make([]*geojson.WOFSpatial, 0)
 
 	pt := geo.NewPoint(lat, lon)
 
-	for _, r := range results {
+	for _, wof := range results {
 
-	    poly := &geo.Polygon{}
+	    // please cache me... somewhere... somehow...
+	    // (20151013/thisisaaronland)
 
-	    // get ID
-	    // get path
-	    // open file
-	    // read geometry in to a geo.Polygon
+	    id := wof.Id
+	    path := utils.Id2AbsPath(p.Source, id)
 
-	    feature := WUB WUB WUB 
+	    feature, err := geojson.UnmarshalFile(path) 
+
+	    if err != nil {
+	       // please log me
+	       continue
+	    }
+
+	    // basically return this from the cache (for wof.Id)
+	    // (20151013/thisisaaronland)
+
 	    polygons := feature.GeomToPolygons()
 
-	    var contained bool
+	    is_contained := false
 
-	    for _, poly in range polygons {
+	    for _, poly := range polygons {
 
 	    	if poly.Contains(pt) {
-		   contained = true
+		   is_contained = true
 		   break
 		}
 	    }
 
-	    if contained {
-	       contained = append(contained, r)
+	    if is_contained {
+	       contained = append(contained, wof)
 	    }
 
 	}
-
-	*/
 
 	return contained
 }

@@ -4,14 +4,27 @@ import (
 	"flag"
 	"fmt"
 	"github.com/whosonfirst/go-whosonfirst-pip"
+	"os"
 )
 
 func main() {
 
+	var source = flag.String("source", "", "The source directory where WOF data lives")
+
 	flag.Parse()
 	args := flag.Args()
 
-	p := pip.PointInPolygon()
+	if *source == "" {
+		panic("missing source")
+	}
+
+	_, err := os.Stat(*source)
+
+	if os.IsNotExist(err) {
+		panic("source does not exist")
+	}
+
+	p := pip.PointInPolygon(*source)
 
 	for _, path := range args {
 		// fmt.Println(path)
@@ -38,6 +51,12 @@ func main() {
 
 	for i, f := range filtered {
 		fmt.Printf("filtered result #%d is %s\n", i, f.Name)
+	}
+
+	contained := p.Contained(lat, lon, inflated)
+
+	for i, f := range contained {
+		fmt.Printf("contained result #%d is %s\n", i, f.Name)
 	}
 
 }
