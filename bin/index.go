@@ -38,8 +38,8 @@ func main() {
 
 	fmt.Printf("get by lat lon %f, %f\n", lat, lon)
 
-	results := p.GetByLatLon(lat, lon)
-	inflated := p.InflateResults(results)
+	results := p.GetIntersectsByLatLon(lat, lon)
+	inflated := p.InflateSpatialResults(results)
 
 	for i, wof := range inflated {
 		fmt.Printf("result #%d is %s\n", i, wof.Name)
@@ -53,10 +53,18 @@ func main() {
 		fmt.Printf("filtered result #%d is %s\n", i, f.Name)
 	}
 
+	fmt.Println("ensure contained")
+
 	contained := p.Contained(lat, lon, inflated)
 
 	for i, f := range contained {
 		fmt.Printf("contained result #%d is %s\n", i, f.Name)
+	}
+
+	simple := p.GetByLatLon(lat, lon)
+
+	for i, f := range simple {
+		fmt.Printf("simple result #%d is %s\n", i, f.Name)
 	}
 
 }

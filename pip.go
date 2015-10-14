@@ -45,7 +45,7 @@ func (p WOFPointInPolygon) IndexGeoJSONFeature(feature geojson.WOFFeature) error
 	return nil
 }
 
-func (p WOFPointInPolygon) GetByLatLon(lat float64, lon float64) []rtreego.Spatial {
+func (p WOFPointInPolygon) GetIntersectsByLatLon(lat float64, lon float64) []rtreego.Spatial {
 
 	pt := rtreego.Point{lon, lat}
 	bbox, _ := rtreego.NewRect(pt, []float64{0.0001, 0.0001}) // how small can I make this?
@@ -54,7 +54,9 @@ func (p WOFPointInPolygon) GetByLatLon(lat float64, lon float64) []rtreego.Spati
 	return results
 }
 
-func (p WOFPointInPolygon) InflateResults(results []rtreego.Spatial) []*geojson.WOFSpatial {
+// maybe just merge this above - still unsure (20151013/thisisaaronland)
+
+func (p WOFPointInPolygon) InflateSpatialResults(results []rtreego.Spatial) []*geojson.WOFSpatial {
 
 	inflated := make([]*geojson.WOFSpatial, 0)
 
@@ -66,6 +68,23 @@ func (p WOFPointInPolygon) InflateResults(results []rtreego.Spatial) []*geojson.
 	}
 
 	return inflated
+}
+
+func (p WOFPointInPolygon) GetByLatLon(lat float64, lon float64) []*geojson.WOFSpatial {
+
+        intersects := p.GetIntersectsByLatLon(lat, lon)
+	inflated := p.InflateSpatialResults(intersects)
+	contained := p.Contained(lat, lon, inflated)
+
+	return contained
+}
+
+func (p WOFPointInPolygon) GetByLatLonForPlacetype(lat float64, lon float64, placetype string) []*geojson.WOFSpatial {
+
+     	possible := p.GetByLatLon(lat, lon)
+	filtered := p.FilterByPlacetype(possible, placetype)
+
+	return filtered
 }
 
 func (p WOFPointInPolygon) FilterByPlacetype(results []*geojson.WOFSpatial, placetype string) []*geojson.WOFSpatial {

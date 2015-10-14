@@ -93,9 +93,8 @@ func main() {
 	fmt.Printf("get by lat lon %f, %f\n", lat, lon)
 
 	results := p.GetByLatLon(lat, lon)
-	inflated := p.InflateResults(results)
 
-	for i, wof := range inflated {
+	for i, wof := range results {
 
 		fmt.Printf("result #%d is %s\n", i, wof.Name)
 	}
