@@ -97,11 +97,18 @@ for _, t := range timings {
 
 ```
 results := p.GetIntersectsByLatLon(lat, lon)
+
+for i, r := range inflated {
+	fmt.Printf("spatial result #%d is %v\n", i, r)
+}
+
 inflated := p.InflateSpatialResults(results)
 
 for i, wof := range inflated {
-	fmt.Printf("result #%d is %s\n", i, wof.Name)
+	fmt.Printf("wof result #%d is %s\n", i, wof.Name)
 }
+
+# This only happens when you call `GetByLatLonForPlacetype`
 
 filtered := p.FilterByPlacetype(inflated, "locality")
 
