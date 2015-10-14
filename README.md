@@ -126,6 +126,8 @@ This is how long it takes reverse-geocoding a point in Brooklyn, using an index 
 
 These numbers are still a bit vague and misleading. For example it's not clear (because it hasn't been measured yet) where most of the work in that 0.1 seconds is happening. Is it reading the GeoJSON file? It is converting the file's geometry in to Polygon object-interface-struct-things? It is actually testing a single coordinate against a giant bag of coordinates? I don't know, yet.
 
+Whatever the case there is lots of room for making this "more fast".
+
 ## See also
 
 * https://www.github.com/dhconnelly/rtreego
