@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/whosonfirst/go-whosonfirst-geojson"
 	"github.com/whosonfirst/go-whosonfirst-pip"
 	"encoding/json"
 	"net/http"
@@ -41,15 +42,53 @@ func main() {
 	handler := func(rsp http.ResponseWriter, req *http.Request) {
 
 		query := req.URL.Query()
-		// fmt.Printf("%v\n", query)
 
 		str_lat := query.Get("latitude")
 		str_lon := query.Get("longitude")
+		placetype := query.Get("placetype")
 
-		lat, _ := strconv.ParseFloat(str_lat, 64)
-		lon, _ := strconv.ParseFloat(str_lon, 64)
+		if str_lat == "" {
+		   http.Error(rsp, "Missing latitude parameter", http.StatusBadRequest)
+		   return
+		}
 
-		results := p.GetByLatLon(lat, lon)
+		if str_lon == "" {
+		   http.Error(rsp, "Missing longitude parameter", http.StatusBadRequest)
+		   return
+		}
+
+		lat, lat_err := strconv.ParseFloat(str_lat, 64)
+		lon, lon_err := strconv.ParseFloat(str_lon, 64)
+
+		if lat_err != nil {
+		   http.Error(rsp, "Invalid latitude parameter", http.StatusBadRequest)
+		   return
+		}
+
+		if lon_err != nil {
+		   http.Error(rsp, "Invalid longitude parameter", http.StatusBadRequest)
+		   return
+		}
+
+		if lat > 90.0 || lat < -90.0 {
+		   http.Error(rsp, "E_IMPOSSIBLE_LATITUDE", http.StatusBadRequest)
+		   return
+		}
+
+		if lon > 180.0 || lon < -180.0 {
+		   http.Error(rsp, "E_IMPOSSIBLE_LONGITUDE", http.StatusBadRequest)
+		   return
+		}
+
+		results := make([]*geojson.WOFSpatial, 0)
+
+		// please validate placetype here...
+
+		if placetype == "" {
+			results = p.GetByLatLon(lat, lon)
+		} else {
+			results = p.GetByLatLonForPlacetype(lat, lon, placetype)
+		}
 
 		js, err := json.Marshal(results)
 
