@@ -66,7 +66,7 @@ p.IndexGeoJSONFile(geojson_file)
 # Or this:
 
 meta_file := "/usr/local/mapzen/whosonfirst-data/meta/wof-locality-latest.csv"
-p.IndexMetaJSONFile(meta_file)
+p.IndexMetaFile(meta_file)
 ```
 
 You can index individual GeoJSON files or [Who's On First "meta" files](https://github.com/whosonfirst/whosonfirst-data/tree/master/meta) which are just CSV files with pointers to individual Who's On First records.
