@@ -103,9 +103,9 @@ $> curl 'http://localhost:8080?latitude=40.677524&longitude=-73.987343' | python
 
 ## Assumptions, caveats and known-knowns
 
-### When we say "geojson" in the context of Go-typing
+### When we say `geojson` in the context of Go-typing
 
-We are talk about the [go-whosonfirst-geojson](https://www.github.com/whosonfirst/go-whosonfirst-geojson) library
+We are talking about the [go-whosonfirst-geojson](https://www.github.com/whosonfirst/go-whosonfirst-geojson) library
 
 ### Speed and performance
 
