@@ -2,6 +2,50 @@
 
 Expermimental point-in-polygon library for Who's On First documents
 
+## Set up
+
+### Setting up your Go path
+
+```
+export GOPATH=`pwd`
+```
+
+(Adjust accordingly if you are not use a different shell than Bash.)
+
+### Dependencies
+
+```
+go get -u "github.com/whosonfirst/go-whosonfirst-geojson"
+go get -u "github.com/whosonfirst/go-whosonfirst-utils"
+go get -u "github.com/kellydunn/golang-geo"
+go get -u "github.com/dhconnelly/rtreego"
+```
+
+There is also a helpful `deps` target in the included Makefile to do this for you.
+
+### Mirror mirror on the wall
+
+```
+if test -d pkg; then rm -rf pkg; fi
+if test -d src/github.com/whosonfirst/go-whosonfirst-pip; then rm -rf src/github.com/whosonfirst/go-whosonfirst-pip; fi
+mkdir -p src/github.com/whosonfirst/go-whosonfirst-pip
+cp *.go src/github.com/whosonfirst/go-whosonfirst-pip/
+```
+
+I am still a bit lost and baffled by how and where Go thinks to look for stuff. In order to make standalone tools compile locally I just clone any package specific code in to the `src` directory. It's not pretty but it works.
+
+There is also a helpful `self` target in the included Makefile to do this for you.
+
+### Tools
+
+```
+go build -o bin/index bin/index.go
+go build -o bin/index-csv bin/index-csv.go
+go build -o bin/pip-server bin/pip-server.go
+```
+
+There is also a helpful `bin` target in the included Makefile to do this for you.
+
 ## Usage
 
 ### The basics
