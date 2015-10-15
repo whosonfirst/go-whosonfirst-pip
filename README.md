@@ -257,9 +257,13 @@ contained: 1/1
 
 Keep in mind New Zealand is a known extreme case and it's "ground truth" polygon is probably not what you need for reverse geocoding. There is a separate on-going process for [sorting out geometries in Who's On First](https://github.com/whosonfirst/whosonfirst-geometries) but on-going work is on-going.
 
-So maybe files with (n) number of polygons / coordinates could be cached in memory. Or something. Whatever the case there is room for making this "Moar Faster".
+So maybe files with (n) number of polygons / coordinates could be cached in memory (see below). Or something. Whatever the case there is room for making this "Moar Faster".
 
 _If you're wondering, sorting the polygons by largest number of coordinates before iterating over them doesn't appear to have any meaningful performance improvement._
+
+### Yes, you can totally DOS yourself by loading Who's On First countries
+
+See above. It takes about two and a half minutes and two hundred concurrent requests to overwhelm a machine with 32GB RAM. So that's not awesome. Again, some sort of caching mechanismlike Google's [groupcache](https://github.com/golang/groupcache ) or really anything to prevent everyone from opening (and parsing) the same too-too large GeoJSON files over and over and over again.
 
 ### Using this with other data sources
 

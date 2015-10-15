@@ -200,8 +200,9 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 
 	for _, wof := range results {
 
-		// please cache me... somewhere... somehow...
-		// (20151013/thisisaaronland)
+		// please cache me... somewhere... somehow... 
+		// see also: https://github.com/golang/groupcache
+		// (20151015/thisisaaronland)
 
 		id := wof.Id
 		path := utils.Id2AbsPath(p.Source, id)
