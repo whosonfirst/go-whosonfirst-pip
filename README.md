@@ -1,6 +1,6 @@
 # go-whosonfirst-pip
 
-Expermimental point-in-polygon library for Who's On First documents
+Expermimental in-memory point-in-polygon (reverse geocoding) library for Who's On First documents
 
 ## Set up
 
