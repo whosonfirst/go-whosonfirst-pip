@@ -86,7 +86,7 @@ func (p WOFPointInPolygon) IndexMetaFile(csv_file string, offset int) error {
 		_, err = os.Stat(abs_path)
 
 		if os.IsNotExist(err) {
-			// fmt.Printf("OH NO - can't find %s\n", abs_path)		   		      
+			// fmt.Printf("OH NO - can't find %s\n", abs_path)
 			continue
 		}
 
@@ -130,6 +130,12 @@ func (p WOFPointInPolygon) InflateSpatialResults(results []rtreego.Spatial) []*g
 
 func (p WOFPointInPolygon) GetByLatLon(lat float64, lon float64) ([]*geojson.WOFSpatial, []*WOFPointInPolygonTiming) {
 
+	// See that: placetype == ""; see below for details
+	return p.GetByLatLonForPlacetype(lat, lon, "")
+}
+
+func (p WOFPointInPolygon) GetByLatLonForPlacetype(lat float64, lon float64, placetype string) ([]*geojson.WOFSpatial, []*WOFPointInPolygonTiming) {
+
 	timings := make([]*WOFPointInPolygonTiming, 0)
 
 	t1a := time.Now()
@@ -146,28 +152,31 @@ func (p WOFPointInPolygon) GetByLatLon(lat float64, lon float64) ([]*geojson.WOF
 	t2b := float64(time.Since(t2a)) / 1e9
 	timings = append(timings, &WOFPointInPolygonTiming{"inflate", t2b})
 
-	t3a := time.Now()
+	// See what's going on here? We are filtering by placetype before
+	// do a final point-in-poly lookup so we don't try to load country
+	// records while only searching for localities
 
-	contained := p.EnsureContained(lat, lon, inflated)
+	filtered := make([]*geojson.WOFSpatial, 0)
 
-	t3b := float64(time.Since(t3a)) / 1e9
-	timings = append(timings, &WOFPointInPolygonTiming{"contained", t3b})
+	if placetype != "" {
+		t3a := time.Now()
+
+		filtered = p.FilterByPlacetype(inflated, placetype)
+
+		t3b := float64(time.Since(t3a)) / 1e9
+		timings = append(timings, &WOFPointInPolygonTiming{"placetype", t3b})
+	} else {
+		filtered = inflated
+	}
+
+	t4a := time.Now()
+
+	contained := p.EnsureContained(lat, lon, filtered)
+
+	t4b := float64(time.Since(t4a)) / 1e9
+	timings = append(timings, &WOFPointInPolygonTiming{"contained", t4b})
 
 	return contained, timings
-}
-
-func (p WOFPointInPolygon) GetByLatLonForPlacetype(lat float64, lon float64, placetype string) ([]*geojson.WOFSpatial, []*WOFPointInPolygonTiming) {
-
-	possible, timings := p.GetByLatLon(lat, lon)
-
-	t1a := time.Now()
-
-	filtered := p.FilterByPlacetype(possible, placetype)
-
-	t1b := float64(time.Since(t1a)) / 1e9
-	timings = append(timings, &WOFPointInPolygonTiming{"placetype", t1b})
-
-	return filtered, timings
 }
 
 func (p WOFPointInPolygon) FilterByPlacetype(results []*geojson.WOFSpatial, placetype string) []*geojson.WOFSpatial {
