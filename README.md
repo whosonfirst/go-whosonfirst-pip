@@ -248,6 +248,10 @@ func (wof WOFFeature) EnSpatialize() (*WOFSpatial, error) {
 
 So that should be changed, or made WOF-specific. Or something. Because yes, you ought to be able to use this (and the `go-whosonfirst-geojson`) library with any old GeoJSON file out there. But not today.
 
+### Less-than-perfect GeoJSON files
+
+First, these should not be confused with malformed GeoJSON files. Some records in Who's On First are missing geometries or maybe the geometries are... well, less than perfect. The `rtreego` package is very strict about what it can handle and freaks out and dies rather than returning errors. So that's still a thing. Personally I like the idea of using `pip-server` as a kind of unfriendly validation tool for Who's On First data but it also means that, for the time being, it is understood that some records may break everything.
+
 ## See also
 
 * https://www.github.com/dhconnelly/rtreego
