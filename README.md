@@ -200,7 +200,9 @@ contained: 3/4
 [timing] contained: 0.116374
 ```
 
-Whatever the case there is lots of room for making this "more fast".
+So, that's a known-known. On the other hand unless you're doing a lot of reverse-geocoding around convergent international borders it's probably not going to be that big a deal. Of files with (n) number of polygons / coordinates could be cached in memory. Or something. Whatever the case there is room for making this "Moar Faster".
+
+_If you're wondering sorting the polygons by largest number of coordinates before iterating over them doesn't appear to have any meaningful performance improvement._
 
 ## See also
 

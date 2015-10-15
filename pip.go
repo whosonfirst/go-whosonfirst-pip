@@ -1,22 +1,21 @@
 package pip
 
 import (
-       "fmt"
-       "encoding/csv"
-       "path"
-       "io"
-       "os"
-       _ "fmt"
-       "time"
+	"encoding/csv"
+	"fmt"
 	rtreego "github.com/dhconnelly/rtreego"
 	geo "github.com/kellydunn/golang-geo"
 	geojson "github.com/whosonfirst/go-whosonfirst-geojson"
 	utils "github.com/whosonfirst/go-whosonfirst-utils"
+	"io"
+	"os"
+	"path"
+	"time"
 )
 
 type WOFPointInPolygonTiming struct {
-     Event string
-     Duration float64
+	Event    string
+	Duration float64
 }
 
 type WOFPointInPolygon struct {
@@ -62,7 +61,7 @@ func (p WOFPointInPolygon) IndexMetaFile(csv_file string, offset int) error {
 	body, read_err := os.Open(csv_file)
 
 	if read_err != nil {
-	   	  return read_err
+		return read_err
 	}
 
 	r := csv.NewReader(body)
@@ -75,7 +74,7 @@ func (p WOFPointInPolygon) IndexMetaFile(csv_file string, offset int) error {
 		}
 
 		if err != nil {
-		   return err
+			return err
 		}
 
 		// sudo my kingdom for a DictReader in Go...
@@ -93,7 +92,7 @@ func (p WOFPointInPolygon) IndexMetaFile(csv_file string, offset int) error {
 		index_err := p.IndexGeoJSONFile(abs_path)
 
 		if index_err != nil {
-		   return index_err
+			return index_err
 		}
 	}
 
@@ -129,7 +128,7 @@ func (p WOFPointInPolygon) InflateSpatialResults(results []rtreego.Spatial) []*g
 
 func (p WOFPointInPolygon) GetByLatLon(lat float64, lon float64) ([]*geojson.WOFSpatial, []*WOFPointInPolygonTiming) {
 
-     	timings := make([]*WOFPointInPolygonTiming, 0)
+	timings := make([]*WOFPointInPolygonTiming, 0)
 
 	t1a := time.Now()
 
@@ -228,7 +227,53 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 		count := len(polygons)
 		iters := 0
 
-	   	t3a := time.Now()
+		t3a := time.Now()
+
+		// sudo make me a GeomToPolygonsSorted method?
+		// also it does actually appear to make any meaningful
+		// difference in lookup times...
+		// (20151014/thisisaaronland)
+
+		/*
+			t4a := time.Now()
+
+			sorted := map[int][]geo.Polygon{}
+			counts := make([]int, 0)
+
+			for _, p := range polygons {
+
+			    e := len(p.Points())
+
+			    _, ok := sorted[e]
+
+			    if ok {
+			       sorted[e] = append(sorted[e], p)
+			    } else {
+			       possible := make([]geo.Polygon, 0)
+			       possible = append(possible, p)
+			       sorted[e] = possible
+
+			       counts = append(counts, e)
+			    }
+			}
+
+			// Oh, Go... why you so weird?
+			sort.Sort(sort.Reverse(sort.IntSlice(counts)))
+
+			sorted_polygons := make([]geo.Polygon, 0)
+
+			for _, i := range counts {
+
+			    for _, p := range sorted[i] {
+			    	sorted_polygons = append(sorted_polygons, p)
+			    }
+			}
+
+			t4b := float64(time.Since(t4a)) / 1e9
+			fmt.Printf("time to sort %d buckets of polygons is %f\n", len(counts), t4b)
+
+			for _, poly := range sorted_polygons {
+		*/
 
 		for _, poly := range polygons {
 
