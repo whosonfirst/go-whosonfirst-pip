@@ -1,6 +1,7 @@
 package pip
 
 import (
+       "fmt"
        "encoding/csv"
        "path"
        "io"
@@ -195,12 +196,17 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 		id := wof.Id
 		path := utils.Id2AbsPath(p.Source, id)
 
+		t1a := time.Now()
+
 		feature, err := geojson.UnmarshalFile(path)
 
 		if err != nil {
 			// please log me
 			continue
 		}
+
+		t1b := float64(time.Since(t1a)) / 1e9
+		fmt.Printf("time to unmarshal %s is %f\n", path, t1b)
 
 		// basically return this from the cache (for wof.Id)
 		// (20151013/thisisaaronland)
@@ -210,17 +216,33 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 		// we'll just assume that is yak-shaving on move along
 		// (20151013/thisisaaronland)
 
+		t2a := time.Now()
+
 		polygons := feature.GeomToPolygons()
+
+		t2b := float64(time.Since(t2a)) / 1e9
+		fmt.Printf("time to convert geom to polygons is %f\n", t2b)
 
 		is_contained := false
 
+		count := len(polygons)
+		iters := 0
+
+	   	t3a := time.Now()
+
 		for _, poly := range polygons {
+
+			iters += 1
 
 			if poly.Contains(pt) {
 				is_contained = true
 				break
 			}
+
 		}
+
+		t3b := float64(time.Since(t3a)) / 1e9
+		fmt.Printf("time to check containment (%t) after %d/%d possible iterations is %f\n", is_contained, iters, count, t3b)
 
 		if is_contained {
 			contained = append(contained, wof)
@@ -228,5 +250,9 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 
 	}
 
+	count_in := len(results)
+	count_out := len(contained)
+
+	fmt.Printf("contained: %d/%d\n", count_out, count_in)
 	return contained
 }

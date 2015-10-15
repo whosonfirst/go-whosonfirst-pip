@@ -176,7 +176,29 @@ This is how long it takes reverse-geocoding a point in Brooklyn, using an index 
 [timing] contained: 0.115600
 ```
 
-These numbers are still a bit vague and misleading. For example it's not clear (because it hasn't been measured yet) where most of the work in that 0.1 seconds is happening. Is it reading the GeoJSON file? It is converting the file's geometry in to Polygon object-interface-struct-things? It is actually testing a single coordinate against a giant bag of coordinates? I don't know, yet.
+If we break that down a bit more we can see that most of the time is spent reading/parsing (does it matter?) the GeoJSON files from disk:
+
+```
+./bin/pip-server -source /usr/local/mapzen/whosonfirst-data/data /usr/local/mapzen/whosonfirst-data/meta/wof-neighbourhood-latest.csv /usr/local/mapzen/whosonfirst-data/meta/wof-country-latest.csv 
+indexed 50124 records in 60.472 seconds 
+time to unmarshal /usr/local/mapzen/whosonfirst-data/data/102/061/079/102061079.geojson is 0.000108
+time to convert geom to polygons is 0.000009
+time to check containment (true) after 1/1 possible iterations is 0.000002
+time to unmarshal /usr/local/mapzen/whosonfirst-data/data/856/337/93/85633793.geojson is 0.103965
+time to convert geom to polygons is 0.010570
+time to check containment (true) after 75/75 possible iterations is 0.000935
+time to unmarshal /usr/local/mapzen/whosonfirst-data/data/858/655/87/85865587.geojson is 0.000300
+time to convert geom to polygons is 0.000044
+time to check containment (true) after 2/2 possible iterations is 0.000002
+time to unmarshal /usr/local/mapzen/whosonfirst-data/data/858/406/09/85840609.geojson is 0.000248
+time to convert geom to polygons is 0.000017
+time to check containment (false) after 1/1 possible iterations is 0.000001
+contained: 3/4
+[timings] 40.677524, -73.987343 (3 results)
+[timing] intersects: 0.000236
+[timing] inflate: 0.000001
+[timing] contained: 0.116374
+```
 
 Whatever the case there is lots of room for making this "more fast".
 
