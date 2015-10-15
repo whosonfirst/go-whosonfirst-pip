@@ -200,9 +200,33 @@ contained: 3/4
 [timing] contained: 0.116374
 ```
 
-So, that's a known-known. On the other hand unless you're doing a lot of reverse-geocoding around convergent international borders it's probably not going to be that big a deal. Or files with (n) number of polygons / coordinates could be cached in memory. Or something. Whatever the case there is room for making this "Moar Faster".
+So, that's a known-known. On the other hand unless you're doing a lot of reverse-geocoding around convergent international borders it's probably not going to be that big a deal. For example:
 
-_If you're wondering sorting the polygons by largest number of coordinates before iterating over them doesn't appear to have any meaningful performance improvement._
+```
+$> siege -c 100 -i -f urls2.txt 
+** SIEGE 3.0.5
+** Preparing 100 concurrent users for battle.
+The server is now under siege...^C
+Lifting the server siege...      done.
+
+Transactions:			136924 hits
+Availability:			100.00 %
+Elapsed time:			756.74 secs
+Data transferred:		4.79 MB
+Response time:			0.05 secs
+Transaction rate:		180.94 trans/sec
+Throughput:			0.01 MB/sec
+Concurrency:			9.92
+Successful transactions:	136924
+Failed transactions:		0
+Longest transaction:		0.79
+Shortest transaction:		0.00
+
+```
+
+Or maybe files with (n) number of polygons / coordinates could be cached in memory. Or something. Whatever the case there is room for making this "Moar Faster".
+
+_If you're wondering, sorting the polygons by largest number of coordinates before iterating over them doesn't appear to have any meaningful performance improvement._
 
 ### Using this with other data sources
 
