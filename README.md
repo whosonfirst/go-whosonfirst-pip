@@ -108,7 +108,7 @@ for i, wof := range inflated {
 	fmt.Printf("wof result #%d is %s\n", i, wof.Name)
 }
 
-# This only happens when you call `GetByLatLonForPlacetype`
+# Assuming you're filtering on placetype
 
 filtered := p.FilterByPlacetype(inflated, "locality")
 
