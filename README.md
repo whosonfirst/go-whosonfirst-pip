@@ -221,10 +221,43 @@ Successful transactions:	136924
 Failed transactions:		0
 Longest transaction:		0.79
 Shortest transaction:		0.00
-
 ```
 
-Or maybe files with (n) number of polygons / coordinates could be cached in memory. Or something. Whatever the case there is room for making this "Moar Faster".
+But yeah, countries are a thing. Reverse geocoding a point in Montréal to country level looks like this:
+
+```
+time to unmarshal /usr/local/mapzen/whosonfirst-data/data/856/330/41/85633041.geojson is 0.074364
+time to convert geom to polygons is 0.007616
+time to check containment (true) after 10/382 possible iterations is 0.000005
+time to unmarshal /usr/local/mapzen/whosonfirst-data/data/856/326/85/85632685.geojson is 0.968242
+time to convert geom to polygons is 0.144211
+time to check containment (false) after 4800/4800 possible iterations is 0.005303
+time to unmarshal /usr/local/mapzen/whosonfirst-data/data/856/337/93/85633793.geojson is 0.106507
+time to convert geom to polygons is 0.009863
+time to check containment (false) after 75/75 possible iterations is 0.000949
+contained: 1/3
+[timings] 45.572744, -73.586295 (1 results)
+[timing] intersects: 0.000030
+[timing] inflate: 0.000001
+[timing] contained: 1.317275
+```
+
+And of course if you're trying to do anything in [New Zealand](https://whosonfirst.mapzen.com/spelunker/id/85633345/) you should get a cup of coffee:
+
+```
+time to unmarshal /usr/local/mapzen/whosonfirst-data/data/856/333/45/85633345.geojson is 5.302032
+time to convert geom to polygons is 0.827670
+time to check containment (true) after 3538/5825 possible iterations is 0.027860
+contained: 1/1
+[timings] -43.587711, 170.366638 (1 results)
+[timing] intersects: 0.000021
+[timing] inflate: 0.000000
+[timing] contained: 6.157659
+```
+
+Keep in mind New Zealand is a known extreme case and it's "ground truth" polygon is probably not what you need for reverse geocoding. There is a separate on-going process for [sorting out geometries in Who's On First](https://github.com/whosonfirst/whosonfirst-geometries) but on-going work is on-going.
+
+So maybe files with (n) number of polygons / coordinates could be cached in memory. Or something. Whatever the case there is room for making this "Moar Faster".
 
 _If you're wondering, sorting the polygons by largest number of coordinates before iterating over them doesn't appear to have any meaningful performance improvement._
 

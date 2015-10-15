@@ -86,12 +86,14 @@ func (p WOFPointInPolygon) IndexMetaFile(csv_file string, offset int) error {
 		_, err = os.Stat(abs_path)
 
 		if os.IsNotExist(err) {
+			// fmt.Printf("OH NO - can't find %s\n", abs_path)		   		      
 			continue
 		}
 
 		index_err := p.IndexGeoJSONFile(abs_path)
 
 		if index_err != nil {
+			// fmt.Printf("FAILED TO INDEX %s, because %s", abs_path, index_err)
 			return index_err
 		}
 	}
