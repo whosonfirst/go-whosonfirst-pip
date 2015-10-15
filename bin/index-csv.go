@@ -1,60 +1,12 @@
 package main
 
 import (
-	"encoding/csv"
 	"flag"
 	"fmt"
 	"github.com/whosonfirst/go-whosonfirst-pip"
-	"io"
 	"os"
-	"path"
 	"time"
 )
-
-// sudo do not panic but return an actual error thingy
-// (20151013/thisisaaronland)
-
-// Please add me to pip.go as a IndexMetaFile method
-// (20151013/thisisaaronland)
-
-func IndexCSVFile(idx *pip.WOFPointInPolygon, csv_file string, source string, offset int) error {
-
-	body, read_err := os.Open(csv_file)
-
-	if read_err != nil {
-		panic(read_err)
-	}
-
-	r := csv.NewReader(body)
-
-	for {
-		record, err := r.Read()
-
-		if err == io.EOF {
-			break
-		}
-
-		if err != nil {
-			panic(err)
-		}
-
-		// sudo my kingdom for a DictReader in Go...
-		// (20151013/thisisaaronland)
-
-		rel_path := record[offset]
-		abs_path := path.Join(source, rel_path)
-
-		_, err = os.Stat(abs_path)
-
-		if os.IsNotExist(err) {
-			continue
-		}
-
-		idx.IndexGeoJSONFile(abs_path)
-	}
-
-	return nil
-}
 
 func main() {
 
