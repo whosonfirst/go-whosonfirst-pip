@@ -98,7 +98,7 @@ for _, t := range timings {
 ```
 results := p.GetIntersectsByLatLon(lat, lon)
 
-for i, r := range inflated {
+for i, r := range results {
 	fmt.Printf("spatial result #%d is %v\n", i, r)
 }
 
