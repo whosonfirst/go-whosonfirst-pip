@@ -47,6 +47,10 @@ func main() {
 
 	fmt.Printf("indexed %d records in %.3f seconds \n", p.Rtree.Size(), t2)
 
+	for pt, count := range p.Placetypes {
+	    fmt.Printf("[placetype] %s %d\n", pt, count)
+	}
+
 	handler := func(rsp http.ResponseWriter, req *http.Request) {
 
 		query := req.URL.Query()

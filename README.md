@@ -132,8 +132,10 @@ If you're curious how the sausage is made.
 There is also a standalone HTTP server for performing point-in-polygon lookups. It is instantiated with a `data` parameter and one or more "meta" CSV files, like this:
 
 ```
-$> ./bin/pip-server -data /usr/local/mapzen/whosonfirst-data/data /usr/local/mapzen/whosonfirst-data/meta/wof-neighbourhood-latest.csv
-indexed 49906 records in 47.895 seconds
+./bin/pip-server -data /usr/local/mapzen/whosonfirst-data/data/ -strict /usr/local/mapzen/whosonfirst-data/meta/wof-country-latest.csv /uslocal/mapzen/whosonfirst-data/meta/wof-neighbourhood-latest.csv 
+indexed 50125 records in 64.023 seconds 
+[placetype] country 219
+[placetype] neighbourhood 49906
 ```
 
 This is how you'd use it:
@@ -147,6 +149,11 @@ $> curl 'http://localhost:8080?latitude=40.677524&longitude=-73.987343' | python
         "Placetype": "neighbourhood"
     },
     {
+        "Id": 85633793,
+        "Name": "United States",
+        "Placetype": "country"
+    },
+    {
         "Id": 85865587,
         "Name": "Gowanus",
         "Placetype": "neighbourhood"
@@ -154,7 +161,23 @@ $> curl 'http://localhost:8080?latitude=40.677524&longitude=-73.987343' | python
 ]
 ```
 
-There is an optional third `placetype` parameter which is a string (see also: [the list of valid Who's On First placetypes](https://github.com/whosonfirst/whosonfirst-placetypes)) that will limit the results to only records of a given placetype.
+There is an optional third `placetype` parameter which is a string (see also: [the list of valid Who's On First placetypes](https://github.com/whosonfirst/whosonfirst-placetypes)) that will limit the results to only records of a given placetype. Like this:
+
+```
+$> curl 'http://localhost:8080?latitude=40.677524&longitude=-73.987343&placetype=neighbourhood' | python -mjson.tool
+[
+    {
+        "Id": 102061079,
+        "Name": "Gowanus Heights",
+        "Placetype": "neighbourhood"
+    },
+    {
+        "Id": 85865587,
+        "Name": "Gowanus",
+        "Placetype": "neighbourhood"
+    }
+]
+```
 
 You can enable strict placetype checking on the server-side by specifying the `-strict` flag. This will ensure that the placetype being specificed has actually been indexed, returning an error if not.
 
