@@ -90,13 +90,15 @@ func main() {
 		results := make([]*geojson.WOFSpatial, 0)
 		timings := make([]*pip.WOFPointInPolygonTiming, 0)
 
-		// please validate placetype here...
+		if placetype != "" {
 
-		if placetype == "" {
-			results, timings = p.GetByLatLon(lat, lon)
-		} else {
-			results, timings = p.GetByLatLonForPlacetype(lat, lon, placetype)
+		   if ! p.IsKnownPlacetype(placetype) {
+			http.Error(rsp, "Unknown placetype", http.StatusBadRequest)
+			return
+		   }
 		}
+
+		results, timings = p.GetByLatLonForPlacetype(lat, lon, placetype)
 
 		count := len(results)
 
