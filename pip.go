@@ -29,7 +29,8 @@ func PointInPolygon(source string) (*WOFPointInPolygon, error) {
 
 	rt := rtreego.NewTree(2, 25, 50)
 
-	cache, err := lru.New(256)
+	cache_size := 256
+	cache, err := lru.New(cache_size)
 
 	if err != nil {
 		return nil, err
@@ -263,6 +264,9 @@ func (p WOFPointInPolygon) LoadPolygons(wof *geojson.WOFSpatial) ([]*geo.Polygon
 	cache, ok := p.Cache.Get(id)
 
 	if ok {
+
+		fmt.Printf("[debug] return polygons from cache for %d\n", id)
+
 		polygons := cache.([]*geo.Polygon)
 		return polygons, nil
 	}
@@ -292,6 +296,11 @@ func (p WOFPointInPolygon) LoadPolygons(wof *geojson.WOFSpatial) ([]*geo.Polygon
 	fmt.Printf("[debug] time to convert geom to polygons (%d points) is %f\n", points, t3b)
 
 	if points >= 100 {
+
+		if p.Cache.Len() == 256 { // PLEASE DO NOT HARDCODE ME...
+			p.Cache.RemoveOldest()
+		}
+
 		ok := p.Cache.Add(id, polygons)
 		fmt.Printf("[cache] %d because so many points (%d): %t\n", id, points, ok)
 	}

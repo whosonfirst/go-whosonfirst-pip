@@ -235,7 +235,32 @@ There is a separate on-going process for [sorting out geometries in Who's On Fir
 
 ### Memory usage
 
-It is still possible, with enough concurrent requests all loading the countries files, to gobble up all the memory and fail unceremoniously. That's a thing that should be fixed... 
+It is still possible, with enough concurrent requests all loading the countries files, to gobble up all the memory and fail unceremoniously. On the other hand, if you take countries and their monster geometries out of the mix everything seems fine:
+
+```
+$> siege -c 100 -i -f urls.txt
+** SIEGE 3.0.5
+** Preparing 100 concurrent users for battle.
+The server is now under siege...^C
+Lifting the server siege...      done.
+
+Transactions:			17939 hits
+Availability:			100.00 %
+Elapsed time:			91.00 secs
+Data transferred:		0.59 MB
+Response time:			0.00 secs
+Transaction rate:		197.13 trans/sec
+Throughput:			0.01 MB/sec
+Concurrency:			0.27
+Successful transactions:	17939
+Failed transactions:		0
+Longest transaction:		0.11
+Shortest transaction:		0.00
+```
+
+_The point of the above is that memory usage was low and constant._
+
+But yeah. Something is going on with countries. And we should fix that...
 
 ### Using this with other data sources
 
