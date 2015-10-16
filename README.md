@@ -168,6 +168,8 @@ This is how it works now:
 3. We are performing a final containment check on the results by reading each corresponding GeoJSON file and converting its geometry in to one or more [golang-geo](https://www.github.com/kellydunn/golang-geo) `Polygon` object-interface-struct-things. Each of these object-interface-struct-things calls its `Contains` method on an input coordinate.
 4. If any given set of `Polygon` object-interface-struct-things contains more than 100 points it is cached using the [golang-lru](https://github.com/hashicorp/golang-lru) package.
 
+### Caching
+
 This is what it looks like reverse-geocoding a point on the island of Montéal against the set of all countries in Who's On First:
 
 ```
