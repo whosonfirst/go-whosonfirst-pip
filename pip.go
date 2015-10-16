@@ -10,7 +10,7 @@ import (
 	geojson "github.com/whosonfirst/go-whosonfirst-geojson"
 	utils "github.com/whosonfirst/go-whosonfirst-utils"
 	"io"
-	"log"
+	_ "log"
 	"os"
 	"path"
 	"time"
@@ -35,7 +35,7 @@ type WOFPointInPolygon struct {
 	Metrics    *WOFPointInPolygonMetrics
 }
 
-func PointInPolygon(source string) (*WOFPointInPolygon, error) {
+func NewPointInPolygon(source string) (*WOFPointInPolygon, error) {
 
 	rt := rtreego.NewTree(2, 25, 50)
 
@@ -70,7 +70,7 @@ func NewPointInPolygonMetrics() *WOFPointInPolygonMetrics {
 	registry.Register("lookups", lookups)
 	registry.Register("time-to-process", ttp)
 
-	go metrics.Log(registry, 10e9, log.New(os.Stdout, "metrics: ", log.Lmicroseconds))
+	// go metrics.Log(registry, 10e9, log.New(os.Stdout, "metrics: ", log.Lmicroseconds))
 
 	m := WOFPointInPolygonMetrics{
 		Registry:      &registry,

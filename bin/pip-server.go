@@ -5,8 +5,10 @@ import (
 	_ "expvar"
 	"flag"
 	"fmt"
+	metrics "github.com/rcrowley/go-metrics"
 	"github.com/whosonfirst/go-whosonfirst-geojson"
 	"github.com/whosonfirst/go-whosonfirst-pip"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -31,11 +33,16 @@ func main() {
 		panic("data does not exist")
 	}
 
-	p, p_err := pip.PointInPolygon(*data)
+	p, p_err := pip.NewPointInPolygon(*data)
 
 	if p_err != nil {
 		panic(p_err)
 	}
+
+	var r metrics.Registry
+	r = *p.Metrics.Registry
+
+	go metrics.Log(r, 60e9, log.New(os.Stdout, "metrics: ", log.Lmicroseconds))
 
 	t1 := time.Now()
 

@@ -24,7 +24,7 @@ func main() {
 		panic("source does not exist")
 	}
 
-	p, p_err := pip.PointInPolygon(*source)
+	p, p_err := pip.NewPointInPolygon(*source)
 
 	if p_err != nil {
 		panic(p_err)
