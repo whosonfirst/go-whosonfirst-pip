@@ -19,6 +19,7 @@ go get -u "github.com/whosonfirst/go-whosonfirst-geojson"
 go get -u "github.com/whosonfirst/go-whosonfirst-utils"
 go get -u "github.com/kellydunn/golang-geo"
 go get -u "github.com/dhconnelly/rtreego"
+go get -u "github.com/hashicorp/golang-lru"
 ```
 
 There is also a helpful `deps` target in the included Makefile to do this for you.
