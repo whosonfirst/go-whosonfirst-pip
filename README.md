@@ -129,10 +129,10 @@ If you're curious how the sausage is made.
 
 ### HTTP Ponies
 
-There is also a standalone HTTP server for performing point-in-polygon lookups. It is instantiated with a `source` parameter and one or more "meta" CSV files, like this:
+There is also a standalone HTTP server for performing point-in-polygon lookups. It is instantiated with a `data` parameter and one or more "meta" CSV files, like this:
 
 ```
-$> ./bin/pip-server -source /usr/local/mapzen/whosonfirst-data/data /usr/local/mapzen/whosonfirst-data/meta/wof-neighbourhood-latest.csv
+$> ./bin/pip-server -data /usr/local/mapzen/whosonfirst-data/data /usr/local/mapzen/whosonfirst-data/meta/wof-neighbourhood-latest.csv
 indexed 49906 records in 47.895 seconds
 ```
 
@@ -153,6 +153,8 @@ $> curl 'http://localhost:8080?latitude=40.677524&longitude=-73.987343' | python
     }
 ]
 ```
+
+There is an optional third `placetype` parameter which is a string (see also: [the list of valid Who's On First placetypes](https://github.com/whosonfirst/whosonfirst-placetypes)) that will limit the results to only records of a given placetype. You can enable strict placetype checking by passing the `-strict` flag. This will ensure that the placetype being specificed has actually been indexed, returning an error if not.
 
 ## Assumptions, caveats and known-knowns
 
