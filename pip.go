@@ -6,10 +6,11 @@ import (
 	rtreego "github.com/dhconnelly/rtreego"
 	lru "github.com/hashicorp/golang-lru"
 	geo "github.com/kellydunn/golang-geo"
+	metrics "github.com/rcrowley/go-metrics"
 	geojson "github.com/whosonfirst/go-whosonfirst-geojson"
 	utils "github.com/whosonfirst/go-whosonfirst-utils"
-	metrics	"github.com/rcrowley/go-metrics"
 	"io"
+	_ "log"
 	"os"
 	"path"
 	"time"
@@ -21,9 +22,9 @@ type WOFPointInPolygonTiming struct {
 }
 
 type WOFPointInPolygonMetrics struct {
-     Registry  *metrics.Registry
-     Lookups   *metrics.Counter
-     Timer     *metrics.Gauge
+	Registry      *metrics.Registry
+	Lookups       *metrics.Counter
+	TimeToProcess *metrics.GaugeFloat64
 }
 
 type WOFPointInPolygon struct {
@@ -31,6 +32,7 @@ type WOFPointInPolygon struct {
 	Cache      *lru.Cache
 	Source     string
 	Placetypes map[string]int
+	Metrics    *WOFPointInPolygonMetrics
 }
 
 func PointInPolygon(source string) (*WOFPointInPolygon, error) {
@@ -44,6 +46,8 @@ func PointInPolygon(source string) (*WOFPointInPolygon, error) {
 		return nil, err
 	}
 
+	m := NewPointInPolygonMetrics()
+
 	pt := make(map[string]int)
 
 	pip := WOFPointInPolygon{
@@ -51,24 +55,28 @@ func PointInPolygon(source string) (*WOFPointInPolygon, error) {
 		Source:     source,
 		Cache:      cache,
 		Placetypes: pt,
+		Metrics:    m,
 	}
 
 	return &pip, nil
 }
 
-func PointInPolygonMetrics () (*WOFPointInPolygonMetrics) {
+func NewPointInPolygonMetrics() *WOFPointInPolygonMetrics {
 
-     registry := metrics.NewRegistry()
-     lookups := metrics.NewCounter()
-     timer := metrics.NewGauge()
+	registry := metrics.NewRegistry()
+	lookups := metrics.NewCounter()
+	ttp := metrics.NewGaugeFloat64()
 
-     m := WOFPointInPolygonMetrics{
-       Registry: &registry,
-       Lookups: &lookups,
-       Timer: &timer,
-     }
+	registry.Register("lookups", lookups)
+	registry.Register("time-to-process", ttp)
 
-     return &m
+	m := WOFPointInPolygonMetrics{
+		Registry:      &registry,
+		Lookups:       &lookups,
+		TimeToProcess: &ttp,
+	}
+
+	return &m
 }
 
 func (p WOFPointInPolygon) IndexGeoJSONFile(source string) error {
@@ -183,6 +191,14 @@ func (p WOFPointInPolygon) GetByLatLon(lat float64, lon float64) ([]*geojson.WOF
 
 func (p WOFPointInPolygon) GetByLatLonForPlacetype(lat float64, lon float64, placetype string) ([]*geojson.WOFSpatial, []*WOFPointInPolygonTiming) {
 
+	// Really? Go, you SO weird...
+
+	/*
+	   var c metrics.Counter
+	   c = *p.Metrics.Lookups
+	   c.Inc(1)
+	*/
+
 	timings := make([]*WOFPointInPolygonTiming, 0)
 
 	t1a := time.Now()
@@ -222,6 +238,19 @@ func (p WOFPointInPolygon) GetByLatLonForPlacetype(lat float64, lon float64, pla
 
 	t4b := float64(time.Since(t4a)) / 1e9
 	timings = append(timings, &WOFPointInPolygonTiming{"contained", t4b})
+
+	/*
+		ttp := float64(time.Since(t1a)) / 1e9
+
+		var g metrics.GaugeFloat64
+		g = *p.Metrics.TimeToProcess
+		g.Update(ttp)
+
+		var r metrics.Registry
+		r = *p.Metrics.Registry
+
+		go metrics.Log(r, 60e9, log.New(os.Stdout, "metrics: ", log.Lmicroseconds))
+	*/
 
 	return contained, timings
 }
