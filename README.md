@@ -175,12 +175,12 @@ This is what it looks like reverse-geocoding a point on the island of Montéal a
 ```
 [debug] time to marshal /usr/local/mapzen/whosonfirst-data/data/856/330/41/85633041.geojson is 0.072996
 [debug] time to convert geom to polygons (67631 points) is 0.007654
-[cache] 85633041 because so many points (67631): false
+[cache] 85633041 because so many points (67631)
 [debug] time to load polygons is 0.080718
 [debug] time to check containment (true) after 10/382 possible iterations is 0.000007
 [debug] time to marshal /usr/local/mapzen/whosonfirst-data/data/856/326/85/85632685.geojson is 0.957890
 [debug] time to convert geom to polygons (469372 points) is 0.135788
-[cache] 85632685 because so many points (469372): false
+[cache] 85632685 because so many points (469372)
 [debug] time to load polygons is 1.093759
 [debug] time to check containment (false) after 4800/4800 possible iterations is 0.005420
 [debug] time to load polygons is 0.000003
@@ -209,7 +209,7 @@ Some countries, like [New Zealand](https://whosonfirst.mapzen.com/spelunker/id/8
 ```
 [debug] time to marshal /usr/local/mapzen/whosonfirst-data/data/856/333/45/85633345.geojson is 5.419391
 [debug] time to convert geom to polygons (3022193 points) is 0.326103
-[cache] 85633345 because so many points (3022193): false
+[cache] 85633345 because so many points (3022193)
 [debug] time to load polygons is 5.745573
 [debug] time to check containment (true) after 1524/5825 possible iterations is 0.020504
 [debug] contained: 1/1

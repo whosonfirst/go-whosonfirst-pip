@@ -301,8 +301,8 @@ func (p WOFPointInPolygon) LoadPolygons(wof *geojson.WOFSpatial) ([]*geo.Polygon
 			p.Cache.RemoveOldest()
 		}
 
-		ok := p.Cache.Add(id, polygons)
-		fmt.Printf("[cache] %d because so many points (%d): %t\n", id, points, ok)
+		_ = p.Cache.Add(id, polygons)
+		fmt.Printf("[cache] %d because so many points (%d)\n", id, points)
 	}
 
 	return polygons, nil
