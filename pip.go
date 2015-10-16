@@ -20,9 +20,9 @@ type WOFPointInPolygonTiming struct {
 }
 
 type WOFPointInPolygon struct {
-	Rtree  *rtreego.Rtree
-	Cache  *lru.Cache
-	Source string
+	Rtree      *rtreego.Rtree
+	Cache      *lru.Cache
+	Source     string
 	Placetypes map[string]int
 }
 
@@ -40,9 +40,9 @@ func PointInPolygon(source string) (*WOFPointInPolygon, error) {
 	pt := make(map[string]int)
 
 	pip := WOFPointInPolygon{
-		Rtree:  rt,
-		Source: source,
-		Cache:  cache,
+		Rtree:      rt,
+		Source:     source,
+		Cache:      cache,
 		Placetypes: pt,
 	}
 
@@ -73,9 +73,9 @@ func (p WOFPointInPolygon) IndexGeoJSONFeature(feature geojson.WOFFeature) error
 	_, ok := p.Placetypes[pt]
 
 	if ok {
-	   p.Placetypes[pt] += 1
+		p.Placetypes[pt] += 1
 	} else {
-	   p.Placetypes[pt] = 1
+		p.Placetypes[pt] = 1
 	}
 
 	p.Rtree.Insert(spatial)
@@ -322,13 +322,13 @@ func (p WOFPointInPolygon) LoadPolygons(wof *geojson.WOFSpatial) ([]*geo.Polygon
 	return polygons, nil
 }
 
-func (p WOFPointInPolygon) IsKnownPlacetype (pt string) bool {
+func (p WOFPointInPolygon) IsKnownPlacetype(pt string) bool {
 
 	_, ok := p.Placetypes[pt]
 
 	if ok {
-	   return true
+		return true
 	} else {
-	  return false
+		return false
 	}
 }

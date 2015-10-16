@@ -15,22 +15,23 @@ import (
 
 func main() {
 
-	var source = flag.String("source", "", "The source directory where WOF data lives")
+	var data = flag.String("data", "", "The data directory where WOF data lives")
+	var strict = flag.Bool("strict", false, "Enable strict placetype checking")
 
 	flag.Parse()
 	args := flag.Args()
 
-	if *source == "" {
-		panic("missing source")
+	if *data == "" {
+		panic("missing data")
 	}
 
-	_, err := os.Stat(*source)
+	_, err := os.Stat(*data)
 
 	if os.IsNotExist(err) {
-		panic("source does not exist")
+		panic("data does not exist")
 	}
 
-	p, p_err := pip.PointInPolygon(*source)
+	p, p_err := pip.PointInPolygon(*data)
 
 	if p_err != nil {
 		panic(p_err)
@@ -92,10 +93,10 @@ func main() {
 
 		if placetype != "" {
 
-		   if ! p.IsKnownPlacetype(placetype) {
-			http.Error(rsp, "Unknown placetype", http.StatusBadRequest)
-			return
-		   }
+			if *strict && !p.IsKnownPlacetype(placetype) {
+				http.Error(rsp, "Unknown placetype", http.StatusBadRequest)
+				return
+			}
 		}
 
 		results, timings = p.GetByLatLonForPlacetype(lat, lon, placetype)
