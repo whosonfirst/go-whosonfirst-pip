@@ -10,7 +10,7 @@ import (
 	geojson "github.com/whosonfirst/go-whosonfirst-geojson"
 	utils "github.com/whosonfirst/go-whosonfirst-utils"
 	"io"
-	_ "log"
+	"log"
 	"os"
 	"path"
 	"time"
@@ -69,6 +69,8 @@ func NewPointInPolygonMetrics() *WOFPointInPolygonMetrics {
 
 	registry.Register("lookups", lookups)
 	registry.Register("time-to-process", ttp)
+
+	go metrics.Log(registry, 10e9, log.New(os.Stdout, "metrics: ", log.Lmicroseconds))
 
 	m := WOFPointInPolygonMetrics{
 		Registry:      &registry,
@@ -191,13 +193,9 @@ func (p WOFPointInPolygon) GetByLatLon(lat float64, lon float64) ([]*geojson.WOF
 
 func (p WOFPointInPolygon) GetByLatLonForPlacetype(lat float64, lon float64, placetype string) ([]*geojson.WOFSpatial, []*WOFPointInPolygonTiming) {
 
-	// Really? Go, you SO weird...
-
-	/*
-	   var c metrics.Counter
-	   c = *p.Metrics.Lookups
-	   c.Inc(1)
-	*/
+	var c metrics.Counter
+	c = *p.Metrics.Lookups
+	c.Inc(1)
 
 	timings := make([]*WOFPointInPolygonTiming, 0)
 
@@ -249,7 +247,7 @@ func (p WOFPointInPolygon) GetByLatLonForPlacetype(lat float64, lon float64, pla
 		var r metrics.Registry
 		r = *p.Metrics.Registry
 
-		go metrics.Log(r, 60e9, log.New(os.Stdout, "metrics: ", log.Lmicroseconds))
+
 	*/
 
 	return contained, timings
