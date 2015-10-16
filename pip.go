@@ -8,6 +8,7 @@ import (
 	geo "github.com/kellydunn/golang-geo"
 	geojson "github.com/whosonfirst/go-whosonfirst-geojson"
 	utils "github.com/whosonfirst/go-whosonfirst-utils"
+	metrics	"github.com/rcrowley/go-metrics"
 	"io"
 	"os"
 	"path"
@@ -17,6 +18,12 @@ import (
 type WOFPointInPolygonTiming struct {
 	Event    string
 	Duration float64
+}
+
+type WOFPointInPolygonMetrics struct {
+     Registry  *metrics.Registry
+     Lookups   *metrics.Counter
+     Timer     *metrics.Gauge
 }
 
 type WOFPointInPolygon struct {
@@ -47,6 +54,21 @@ func PointInPolygon(source string) (*WOFPointInPolygon, error) {
 	}
 
 	return &pip, nil
+}
+
+func PointInPolygonMetrics () (*WOFPointInPolygonMetrics) {
+
+     registry := metrics.NewRegistry()
+     lookups := metrics.NewCounter()
+     timer := metrics.NewGauge()
+
+     m := WOFPointInPolygonMetrics{
+       Registry: &registry,
+       Lookups: &lookups,
+       Timer: &timer,
+     }
+
+     return &m
 }
 
 func (p WOFPointInPolygon) IndexGeoJSONFile(source string) error {

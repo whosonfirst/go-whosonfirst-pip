@@ -12,6 +12,7 @@ deps:   self
 	go get -u "github.com/kellydunn/golang-geo"
 	go get -u "github.com/dhconnelly/rtreego"
 	go get -u "github.com/hashicorp/golang-lru"
+	go get -u "github.com/rcrowley/go-metrics"
 
 fmt:
 	go fmt bin/*.go
