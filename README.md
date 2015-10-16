@@ -191,6 +191,8 @@ This is what it looks like reverse-geocoding a point on the island of Montéal a
 [timing] inflate: 0.000001
 [timing] contained: 1.181019
 
+# this time loading polygons from cache
+
 [debug] time to load polygons is 0.000003
 [debug] time to check containment (true) after 10/382 possible iterations is 0.000006
 [debug] time to load polygons is 0.000001
@@ -219,7 +221,7 @@ Some countries, like [New Zealand](https://whosonfirst.mapzen.com/spelunker/id/8
 [timing] placetype: 0.000001
 [timing] contained: 5.766121
 
-# this is where we are loading polygons for 85633345 from cache
+# this time loading polygons from cache
 
 [debug] time to load polygons is 0.000003
 [debug] time to check containment (true) after 1524/5825 possible iterations is 0.020891
