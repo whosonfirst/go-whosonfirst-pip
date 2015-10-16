@@ -26,7 +26,11 @@ func main() {
 		panic("source does not exist")
 	}
 
-	p := pip.PointInPolygon(*source)
+	p, p_err := pip.PointInPolygon(*source)
+
+	if p_err != nil {
+		panic(p_err)
+	}
 
 	t1 := time.Now()
 

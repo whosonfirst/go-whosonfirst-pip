@@ -166,104 +166,76 @@ This is how it works now:
 1. We are using the [rtreego](https://www.github.com/dhconnelly/rtreego) library to do most of the heavy lifting and filtering.
 2. Results from the rtreego `SearchIntersect` method are "inflated" and recast as geojson `WOFSpatial` object-interface-struct-things.
 3. We are performing a final containment check on the results by reading each corresponding GeoJSON file and converting its geometry in to one or more [golang-geo](https://www.github.com/kellydunn/golang-geo) `Polygon` object-interface-struct-things. Each of these object-interface-struct-things calls its `Contains` method on an input coordinate.
+4. If any given set of `Polygon` object-interface-struct-things contains more than 100 points it is cached using the [golang-lru](https://github.com/hashicorp/golang-lru) package.
 
-This is how long it takes reverse-geocoding a point in Brooklyn, using an index of all the countries in Who's On First:
-
-```
-[timings] 40.677524,-73.987343 ()
-[timing] intersects: 0.000030
-[timing] inflate: 0.000000
-[timing] contained: 0.115600
-```
-
-If we break that down a bit more we can see that most of the time is spent reading/parsing (does it matter?) the GeoJSON files from disk:
+This is what it looks like reverse-geocoding a point on the island of Montéal against the set of all countries in Who's On First:
 
 ```
-./bin/pip-server -source /usr/local/mapzen/whosonfirst-data/data /usr/local/mapzen/whosonfirst-data/meta/wof-neighbourhood-latest.csv /usr/local/mapzen/whosonfirst-data/meta/wof-country-latest.csv 
-indexed 50124 records in 60.472 seconds 
-time to unmarshal /usr/local/mapzen/whosonfirst-data/data/102/061/079/102061079.geojson is 0.000108
-time to convert geom to polygons is 0.000009
-time to check containment (true) after 1/1 possible iterations is 0.000002
-time to unmarshal /usr/local/mapzen/whosonfirst-data/data/856/337/93/85633793.geojson is 0.103965
-time to convert geom to polygons is 0.010570
-time to check containment (true) after 75/75 possible iterations is 0.000935
-time to unmarshal /usr/local/mapzen/whosonfirst-data/data/858/655/87/85865587.geojson is 0.000300
-time to convert geom to polygons is 0.000044
-time to check containment (true) after 2/2 possible iterations is 0.000002
-time to unmarshal /usr/local/mapzen/whosonfirst-data/data/858/406/09/85840609.geojson is 0.000248
-time to convert geom to polygons is 0.000017
-time to check containment (false) after 1/1 possible iterations is 0.000001
-contained: 3/4
-[timings] 40.677524, -73.987343 (3 results)
-[timing] intersects: 0.000236
-[timing] inflate: 0.000001
-[timing] contained: 0.116374
-```
-
-So, that's a known-known. On the other hand unless you're doing a lot of reverse-geocoding around convergent international borders it's probably not going to be that big a deal. For example:
-
-```
-$> siege -c 100 -i -f urls2.txt 
-** SIEGE 3.0.5
-** Preparing 100 concurrent users for battle.
-The server is now under siege...^C
-Lifting the server siege...      done.
-
-Transactions:			136924 hits
-Availability:			100.00 %
-Elapsed time:			756.74 secs
-Data transferred:		4.79 MB
-Response time:			0.05 secs
-Transaction rate:		180.94 trans/sec
-Throughput:			0.01 MB/sec
-Concurrency:			9.92
-Successful transactions:	136924
-Failed transactions:		0
-Longest transaction:		0.79
-Shortest transaction:		0.00
-```
-
-But yeah, countries are a thing. Reverse geocoding a point in Montréal to country level looks like this:
-
-```
-time to unmarshal /usr/local/mapzen/whosonfirst-data/data/856/330/41/85633041.geojson is 0.074364
-time to convert geom to polygons is 0.007616
-time to check containment (true) after 10/382 possible iterations is 0.000005
-time to unmarshal /usr/local/mapzen/whosonfirst-data/data/856/326/85/85632685.geojson is 0.968242
-time to convert geom to polygons is 0.144211
-time to check containment (false) after 4800/4800 possible iterations is 0.005303
-time to unmarshal /usr/local/mapzen/whosonfirst-data/data/856/337/93/85633793.geojson is 0.106507
-time to convert geom to polygons is 0.009863
-time to check containment (false) after 75/75 possible iterations is 0.000949
-contained: 1/3
-[timings] 45.572744, -73.586295 (1 results)
+[debug] time to marshal /usr/local/mapzen/whosonfirst-data/data/856/330/41/85633041.geojson is 0.072996
+[debug] time to convert geom to polygons (67631 points) is 0.007654
+[cache] 85633041 because so many points (67631): false
+[debug] time to load polygons is 0.080718
+[debug] time to check containment (true) after 10/382 possible iterations is 0.000007
+[debug] time to marshal /usr/local/mapzen/whosonfirst-data/data/856/326/85/85632685.geojson is 0.957890
+[debug] time to convert geom to polygons (469372 points) is 0.135788
+[cache] 85632685 because so many points (469372): false
+[debug] time to load polygons is 1.093759
+[debug] time to check containment (false) after 4800/4800 possible iterations is 0.005420
+[debug] time to load polygons is 0.000003
+[debug] time to check containment (false) after 75/75 possible iterations is 0.001028
+[debug] contained: 1/3
+[timings] 45.572744, -73.586295 (1 result)
 [timing] intersects: 0.000030
 [timing] inflate: 0.000001
-[timing] contained: 1.317275
+[timing] contained: 1.181019
+
+[debug] time to load polygons is 0.000003
+[debug] time to check containment (true) after 10/382 possible iterations is 0.000006
+[debug] time to load polygons is 0.000001
+[debug] time to check containment (false) after 4800/4800 possible iterations is 0.005379
+[debug] time to load polygons is 0.000001
+[debug] time to check containment (false) after 75/75 possible iterations is 0.001023
+[debug] contained: 1/3
+[timings] 45.572744, -73.586295 (1 result)
+[timing] intersects: 0.000025
+[timing] inflate: 0.000001
+[timing] contained: 0.006456
 ```
 
-And of course if you're trying to do anything in [New Zealand](https://whosonfirst.mapzen.com/spelunker/id/85633345/) you should get a cup of coffee:
+Some countries, like [New Zealand](https://whosonfirst.mapzen.com/spelunker/id/85633345/) are known to be problematic because they have an insanely large "ground truth" polygon, but the caching definitely helps. For example, reverse-geocoding `-40.357418,175.611481` looks like this:
 
 ```
-time to unmarshal /usr/local/mapzen/whosonfirst-data/data/856/333/45/85633345.geojson is 5.302032
-time to convert geom to polygons is 0.827670
-time to check containment (true) after 3538/5825 possible iterations is 0.027860
-contained: 1/1
-[timings] -43.587711, 170.366638 (1 results)
-[timing] intersects: 0.000021
-[timing] inflate: 0.000000
-[timing] contained: 6.157659
+[debug] time to marshal /usr/local/mapzen/whosonfirst-data/data/856/333/45/85633345.geojson is 5.419391
+[debug] time to convert geom to polygons (3022193 points) is 0.326103
+[cache] 85633345 because so many points (3022193): false
+[debug] time to load polygons is 5.745573
+[debug] time to check containment (true) after 1524/5825 possible iterations is 0.020504
+[debug] contained: 1/1
+[timings] -40.357418, 175.611481 (1 result)
+[timing] intersects: 0.000081
+[timing] inflate: 0.000004
+[timing] placetype: 0.000001
+[timing] contained: 5.766121
+
+# this is where we are loading polygons for 85633345 from cache
+
+[debug] time to load polygons is 0.000003
+[debug] time to check containment (true) after 1524/5825 possible iterations is 0.020891
+[debug] contained: 1/1
+[timings] -40.357418, 175.611481 (1 result)
+[timing] intersects: 0.000082
+[timing] inflate: 0.000001
+[timing] placetype: 0.000001
+[timing] contained: 0.020952
 ```
 
-Keep in mind New Zealand is a known extreme case and it's "ground truth" polygon is probably not what you need for reverse geocoding. There is a separate on-going process for [sorting out geometries in Who's On First](https://github.com/whosonfirst/whosonfirst-geometries) but on-going work is on-going.
+So the amount of time it takes to perform the final point-in-polygon test is relatively constant but the difference between fetching the cached and uncached polygons to test is `0.000003` seconds versus `5.419391` so that's a thing.
 
-So maybe files with (n) number of polygons / coordinates could be cached in memory (see below). Or something. Whatever the case there is room for making this "Moar Faster".
+There is a separate on-going process for [sorting out geometries in Who's On First](https://github.com/whosonfirst/whosonfirst-geometries) but on-going work is on-going. Whatever the case there is room for making this "Moar Faster".
 
-_If you're wondering, sorting the polygons by largest number of coordinates before iterating over them doesn't appear to have any meaningful performance improvement._
+### Memory usage
 
-### Yes, you can totally DOS yourself by loading Who's On First countries
-
-See above. It takes about two and a half minutes and two hundred concurrent requests to overwhelm a machine with 32GB RAM. So that's not awesome. Again, some sort of caching mechanismlike Google's [groupcache](https://github.com/golang/groupcache ) or really anything to prevent everyone from opening (and parsing) the same too-too large GeoJSON files over and over and over again.
+It is still possible, with enough concurrent requests all loading the countries files, to gobble up all the memory and fail unceremoniously. That's a thing that should be fixed... 
 
 ### Using this with other data sources
 
@@ -293,5 +265,6 @@ First, these should not be confused with malformed GeoJSON files. Some records i
 
 * https://www.github.com/dhconnelly/rtreego
 * https://www.github.com/kellydunn/golang-geo
+* https://github.com/hashicorp/golang-lru
 * https://www.github.com/whosonfirst/go-whosonfirst-geojson
 * https://whosonfirst.mapzen.com/data/

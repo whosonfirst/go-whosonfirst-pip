@@ -11,6 +11,7 @@ deps:   self
 	go get -u "github.com/whosonfirst/go-whosonfirst-utils"
 	go get -u "github.com/kellydunn/golang-geo"
 	go get -u "github.com/dhconnelly/rtreego"
+	go get -u "github.com/hashicorp/golang-lru"
 
 fmt:
 	go fmt bin/*.go

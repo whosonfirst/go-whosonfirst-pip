@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	rtreego "github.com/dhconnelly/rtreego"
+	lru "github.com/hashicorp/golang-lru"
 	geo "github.com/kellydunn/golang-geo"
 	geojson "github.com/whosonfirst/go-whosonfirst-geojson"
 	utils "github.com/whosonfirst/go-whosonfirst-utils"
@@ -20,17 +21,27 @@ type WOFPointInPolygonTiming struct {
 
 type WOFPointInPolygon struct {
 	Rtree  *rtreego.Rtree
+	Cache  *lru.Cache
 	Source string
 }
 
-func PointInPolygon(source string) *WOFPointInPolygon {
+func PointInPolygon(source string) (*WOFPointInPolygon, error) {
 
 	rt := rtreego.NewTree(2, 25, 50)
 
-	return &WOFPointInPolygon{
+	cache, err := lru.New(256)
+
+	if err != nil {
+		return nil, err
+	}
+
+	pip := WOFPointInPolygon{
 		Rtree:  rt,
 		Source: source,
+		Cache:  cache,
 	}
+
+	return &pip, nil
 }
 
 func (p WOFPointInPolygon) IndexGeoJSONFile(source string) error {
@@ -118,7 +129,6 @@ func (p WOFPointInPolygon) InflateSpatialResults(results []rtreego.Spatial) []*g
 
 	for _, r := range results {
 
-		// Go, you so wacky...
 		// https://golang.org/doc/effective_go.html#interface_conversions
 
 		wof := r.(*geojson.WOFSpatial)
@@ -200,16 +210,9 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 
 	for _, wof := range results {
 
-		// please cache me... somewhere... somehow... 
-		// see also: https://github.com/golang/groupcache
-		// (20151015/thisisaaronland)
-
-		id := wof.Id
-		path := utils.Id2AbsPath(p.Source, id)
-
 		t1a := time.Now()
 
-		feature, err := geojson.UnmarshalFile(path)
+		polygons, err := p.LoadPolygons(wof)
 
 		if err != nil {
 			// please log me
@@ -217,22 +220,7 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 		}
 
 		t1b := float64(time.Since(t1a)) / 1e9
-		fmt.Printf("time to unmarshal %s is %f\n", path, t1b)
-
-		// basically return this from the cache (for wof.Id)
-		// (20151013/thisisaaronland)
-
-		// it might also be nice to be able to return this as
-		// an iterator to save build large polygons but today
-		// we'll just assume that is yak-shaving on move along
-		// (20151013/thisisaaronland)
-
-		t2a := time.Now()
-
-		polygons := feature.GeomToPolygons()
-
-		t2b := float64(time.Since(t2a)) / 1e9
-		fmt.Printf("time to convert geom to polygons is %f\n", t2b)
+		fmt.Printf("[debug] time to load polygons is %f\n", t1b)
 
 		is_contained := false
 
@@ -240,52 +228,6 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 		iters := 0
 
 		t3a := time.Now()
-
-		// sudo make me a GeomToPolygonsSorted method?
-		// also it does actually appear to make any meaningful
-		// difference in lookup times...
-		// (20151014/thisisaaronland)
-
-		/*
-			t4a := time.Now()
-
-			sorted := map[int][]geo.Polygon{}
-			counts := make([]int, 0)
-
-			for _, p := range polygons {
-
-			    e := len(p.Points())
-
-			    _, ok := sorted[e]
-
-			    if ok {
-			       sorted[e] = append(sorted[e], p)
-			    } else {
-			       possible := make([]geo.Polygon, 0)
-			       possible = append(possible, p)
-			       sorted[e] = possible
-
-			       counts = append(counts, e)
-			    }
-			}
-
-			// Oh, Go... why you so weird?
-			sort.Sort(sort.Reverse(sort.IntSlice(counts)))
-
-			sorted_polygons := make([]geo.Polygon, 0)
-
-			for _, i := range counts {
-
-			    for _, p := range sorted[i] {
-			    	sorted_polygons = append(sorted_polygons, p)
-			    }
-			}
-
-			t4b := float64(time.Since(t4a)) / 1e9
-			fmt.Printf("time to sort %d buckets of polygons is %f\n", len(counts), t4b)
-
-			for _, poly := range sorted_polygons {
-		*/
 
 		for _, poly := range polygons {
 
@@ -299,7 +241,7 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 		}
 
 		t3b := float64(time.Since(t3a)) / 1e9
-		fmt.Printf("time to check containment (%t) after %d/%d possible iterations is %f\n", is_contained, iters, count, t3b)
+		fmt.Printf("[debug] time to check containment (%t) after %d/%d possible iterations is %f\n", is_contained, iters, count, t3b)
 
 		if is_contained {
 			contained = append(contained, wof)
@@ -310,6 +252,49 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 	count_in := len(results)
 	count_out := len(contained)
 
-	fmt.Printf("contained: %d/%d\n", count_out, count_in)
+	fmt.Printf("[debug] contained: %d/%d\n", count_out, count_in)
 	return contained
+}
+
+func (p WOFPointInPolygon) LoadPolygons(wof *geojson.WOFSpatial) ([]*geo.Polygon, error) {
+
+	id := wof.Id
+
+	cache, ok := p.Cache.Get(id)
+
+	if ok {
+		polygons := cache.([]*geo.Polygon)
+		return polygons, nil
+	}
+
+	t2a := time.Now()
+
+	abs_path := utils.Id2AbsPath(p.Source, id)
+	feature, err := geojson.UnmarshalFile(abs_path)
+
+	t2b := float64(time.Since(t2a)) / 1e9
+	fmt.Printf("[debug] time to marshal %s is %f\n", abs_path, t2b)
+
+	if err != nil {
+		return nil, err
+	}
+
+	t3a := time.Now()
+
+	polygons := feature.GeomToPolygons()
+	var points int
+
+	for _, p := range polygons {
+		points += len(p.Points())
+	}
+
+	t3b := float64(time.Since(t3a)) / 1e9
+	fmt.Printf("[debug] time to convert geom to polygons (%d points) is %f\n", points, t3b)
+
+	if points >= 100 {
+		ok := p.Cache.Add(id, polygons)
+		fmt.Printf("[cache] %d because so many points (%d): %t\n", id, points, ok)
+	}
+
+	return polygons, nil
 }
