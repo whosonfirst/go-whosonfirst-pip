@@ -42,8 +42,8 @@ func main() {
 
 	fmt.Printf("get by lat lon %f, %f\n", lat, lon)
 
-	results := p.GetIntersectsByLatLon(lat, lon)
-	inflated := p.InflateSpatialResults(results)
+	results, _ := p.GetIntersectsByLatLon(lat, lon)
+	inflated, _ := p.InflateSpatialResults(results)
 
 	for i, wof := range inflated {
 		fmt.Printf("result #%d is %s\n", i, wof.Name)
@@ -51,7 +51,7 @@ func main() {
 
 	fmt.Println("filter results by locality")
 
-	filtered := p.FilterByPlacetype(inflated, "locality")
+	filtered, _ := p.FilterByPlacetype(inflated, "locality")
 
 	for i, f := range filtered {
 		fmt.Printf("filtered result #%d is %s\n", i, f.Name)
@@ -59,7 +59,7 @@ func main() {
 
 	fmt.Println("ensure contained")
 
-	contained := p.EnsureContained(lat, lon, inflated)
+	contained, _ := p.EnsureContained(lat, lon, inflated)
 
 	for i, f := range contained {
 		fmt.Printf("contained result #%d is %s\n", i, f.Name)

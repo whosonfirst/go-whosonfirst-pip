@@ -21,15 +21,27 @@ type WOFPointInPolygonTiming struct {
 	Duration float64
 }
 
+func NewWOFPointInPolygonTiming(event string, d time.Duration) *WOFPointInPolygonTiming {
+
+	df := float64(d) / 1e9
+
+	t := WOFPointInPolygonTiming{Event: event, Duration: df}
+	return &t
+
+}
+
 type WOFPointInPolygonMetrics struct {
-	Registry      *metrics.Registry
-	CountUnmarshal *metrics.Counter
-	CountCacheHit *metrics.Counter
-	CountCacheMiss *metrics.Counter
-	CountCacheSet *metrics.Counter
+	Registry        *metrics.Registry
+	CountUnmarshal  *metrics.Counter
+	CountCacheHit   *metrics.Counter
+	CountCacheMiss  *metrics.Counter
+	CountCacheSet   *metrics.Counter
 	CountLookups    *metrics.Counter
-	TimeToProcess *metrics.Timer
 	TimeToUnmarshal *metrics.Timer
+	TimeToIntersect *metrics.Timer
+	TimeToInflate   *metrics.Timer
+	TimeToContain   *metrics.Timer
+	TimeToProcess   *metrics.Timer
 }
 
 func NewPointInPolygonMetrics() *WOFPointInPolygonMetrics {
@@ -42,8 +54,11 @@ func NewPointInPolygonMetrics() *WOFPointInPolygonMetrics {
 	cnt_cache_miss := metrics.NewCounter()
 	cnt_cache_set := metrics.NewCounter()
 
-	tm_process := metrics.NewTimer()
 	tm_unmarshal := metrics.NewTimer()
+	tm_intersect := metrics.NewTimer()
+	tm_inflate := metrics.NewTimer()
+	tm_contain := metrics.NewTimer()
+	tm_process := metrics.NewTimer()
 
 	registry.Register("lookups", cnt_lookups)
 	registry.Register("unmarshaled", cnt_unmarshal)
@@ -52,16 +67,22 @@ func NewPointInPolygonMetrics() *WOFPointInPolygonMetrics {
 	registry.Register("cache-set", cnt_cache_set)
 	registry.Register("time-to-process", tm_process)
 	registry.Register("time-to-unmarshal", tm_unmarshal)
+	registry.Register("time-to-intersect", tm_intersect)
+	// registry.Register("time-to-inflate", tm_inflate)
+	registry.Register("time-to-contain", tm_contain)
 
 	m := WOFPointInPolygonMetrics{
-		Registry:      &registry,
-		CountLookups:   &cnt_lookups,
-		CountUnmarshal: &cnt_unmarshal,
-		CountCacheHit: &cnt_cache_hit,
-		CountCacheMiss: &cnt_cache_miss,
-		CountCacheSet: &cnt_cache_set,
-		TimeToProcess:  &tm_process,
+		Registry:        &registry,
+		CountLookups:    &cnt_lookups,
+		CountUnmarshal:  &cnt_unmarshal,
+		CountCacheHit:   &cnt_cache_hit,
+		CountCacheMiss:  &cnt_cache_miss,
+		CountCacheSet:   &cnt_cache_set,
 		TimeToUnmarshal: &tm_unmarshal,
+		TimeToIntersect: &tm_intersect,
+		TimeToInflate:   &tm_inflate,
+		TimeToContain:   &tm_contain,
+		TimeToProcess:   &tm_process,
 	}
 
 	return &m
@@ -182,18 +203,29 @@ func (p WOFPointInPolygon) IndexMetaFile(csv_file string, offset int) error {
 	return nil
 }
 
-func (p WOFPointInPolygon) GetIntersectsByLatLon(lat float64, lon float64) []rtreego.Spatial {
+func (p WOFPointInPolygon) GetIntersectsByLatLon(lat float64, lon float64) ([]rtreego.Spatial, time.Duration) {
+
+	t := time.Now()
 
 	pt := rtreego.Point{lon, lat}
 	bbox, _ := rtreego.NewRect(pt, []float64{0.0001, 0.0001}) // how small can I make this?
 
 	results := p.Rtree.SearchIntersect(bbox)
-	return results
+
+	d := time.Since(t)
+
+	var tm metrics.Timer
+	tm = *p.Metrics.TimeToIntersect
+	tm.Update(d)
+
+	return results, d
 }
 
 // maybe just merge this above - still unsure (20151013/thisisaaronland)
 
-func (p WOFPointInPolygon) InflateSpatialResults(results []rtreego.Spatial) []*geojson.WOFSpatial {
+func (p WOFPointInPolygon) InflateSpatialResults(results []rtreego.Spatial) ([]*geojson.WOFSpatial, time.Duration) {
+
+	t := time.Now()
 
 	inflated := make([]*geojson.WOFSpatial, 0)
 
@@ -205,7 +237,13 @@ func (p WOFPointInPolygon) InflateSpatialResults(results []rtreego.Spatial) []*g
 		inflated = append(inflated, wof)
 	}
 
-	return inflated
+	d := time.Since(t)
+
+	var tm metrics.Timer
+	tm = *p.Metrics.TimeToInflate
+	tm.Update(d)
+
+	return inflated, d
 }
 
 func (p WOFPointInPolygon) GetByLatLon(lat float64, lon float64) ([]*geojson.WOFSpatial, []*WOFPointInPolygonTiming) {
@@ -220,21 +258,15 @@ func (p WOFPointInPolygon) GetByLatLonForPlacetype(lat float64, lon float64, pla
 	c = *p.Metrics.CountLookups
 	c.Inc(1)
 
+	t := time.Now()
+
 	timings := make([]*WOFPointInPolygonTiming, 0)
 
-	t1 := time.Now()
+	intersects, duration := p.GetIntersectsByLatLon(lat, lon)
+	timings = append(timings, NewWOFPointInPolygonTiming("intersects", duration))
 
-	intersects := p.GetIntersectsByLatLon(lat, lon)
-
-	//t1b := float64(time.Since(t1a)) / 1e9
-	//timings = append(timings, &WOFPointInPolygonTiming{"intersects", t1b})
-
-	t2a := time.Now()
-
-	inflated := p.InflateSpatialResults(intersects)
-
-	t2b := float64(time.Since(t2a)) / 1e9
-	timings = append(timings, &WOFPointInPolygonTiming{"inflate", t2b})
+	inflated, duration := p.InflateSpatialResults(intersects)
+	timings = append(timings, NewWOFPointInPolygonTiming("inflate", duration))
 
 	// See what's going on here? We are filtering by placetype before
 	// do a final point-in-poly lookup so we don't try to load country
@@ -243,32 +275,27 @@ func (p WOFPointInPolygon) GetByLatLonForPlacetype(lat float64, lon float64, pla
 	filtered := make([]*geojson.WOFSpatial, 0)
 
 	if placetype != "" {
-		t3a := time.Now()
-
-		filtered = p.FilterByPlacetype(inflated, placetype)
-
-		t3b := float64(time.Since(t3a)) / 1e9
-		timings = append(timings, &WOFPointInPolygonTiming{"placetype", t3b})
+		filtered, duration = p.FilterByPlacetype(inflated, placetype)
+		timings = append(timings, NewWOFPointInPolygonTiming("filter", duration))
 	} else {
 		filtered = inflated
 	}
 
-	t4a := time.Now()
+	contained, duration := p.EnsureContained(lat, lon, filtered)
+	timings = append(timings, NewWOFPointInPolygonTiming("contain", duration))
 
-	contained := p.EnsureContained(lat, lon, filtered)
-
-	t4b := float64(time.Since(t4a)) / 1e9
-	timings = append(timings, &WOFPointInPolygonTiming{"contained", t4b})
-
+	d := time.Since(t)
 
 	var tm metrics.Timer
 	tm = *p.Metrics.TimeToProcess
-	tm.Update(time.Since(t1))
+	tm.Update(d)
 
 	return contained, timings
 }
 
-func (p WOFPointInPolygon) FilterByPlacetype(results []*geojson.WOFSpatial, placetype string) []*geojson.WOFSpatial {
+func (p WOFPointInPolygon) FilterByPlacetype(results []*geojson.WOFSpatial, placetype string) ([]*geojson.WOFSpatial, time.Duration) {
+
+	t := time.Now()
 
 	filtered := make([]*geojson.WOFSpatial, 0)
 
@@ -278,10 +305,14 @@ func (p WOFPointInPolygon) FilterByPlacetype(results []*geojson.WOFSpatial, plac
 		}
 	}
 
-	return filtered
+	d := time.Since(t)
+
+	return filtered, d
 }
 
-func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*geojson.WOFSpatial) []*geojson.WOFSpatial {
+func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*geojson.WOFSpatial) ([]*geojson.WOFSpatial, time.Duration) {
+
+	t := time.Now()
 
 	contained := make([]*geojson.WOFSpatial, 0)
 
@@ -328,11 +359,17 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 
 	}
 
+	d := time.Since(t)
+
+	var tm metrics.Timer
+	tm = *p.Metrics.TimeToContain
+	tm.Update(d)
+
 	// count_in := len(results)
 	// count_out := len(contained)
 
 	// fmt.Printf("[debug] contained: %d/%d\n", count_out, count_in)
-	return contained
+	return contained, d
 }
 
 func (p WOFPointInPolygon) LoadGeoJSON(path string) (*geojson.WOFFeature, error) {
@@ -341,13 +378,15 @@ func (p WOFPointInPolygon) LoadGeoJSON(path string) (*geojson.WOFFeature, error)
 
 	feature, err := geojson.UnmarshalFile(path)
 
+	d := time.Since(t)
+
 	var tm metrics.Timer
 	tm = *p.Metrics.TimeToUnmarshal
 
-	tm.Update(time.Since(t))
+	tm.Update(d)
 
 	if err != nil {
-	   return nil, err
+		return nil, err
 	}
 
 	var c metrics.Counter
@@ -387,7 +426,7 @@ func (p WOFPointInPolygon) LoadPolygons(wof *geojson.WOFSpatial) ([]*geo.Polygon
 	polygons, poly_err := p.LoadPolygonsForFeature(feature)
 
 	if poly_err != nil {
-	   return nil, poly_err
+		return nil, poly_err
 	}
 
 	return polygons, nil
@@ -412,7 +451,7 @@ func (p WOFPointInPolygon) LoadPolygonsForFeature(feature *geojson.WOFFeature) (
 		var c metrics.Counter
 		c = *p.Metrics.CountCacheSet
 
-	   	id := feature.WOFId()
+		id := feature.WOFId()
 		evicted := p.Cache.Add(id, polygons)
 
 		if evicted == true {
