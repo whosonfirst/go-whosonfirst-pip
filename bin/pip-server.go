@@ -18,6 +18,7 @@ import (
 func main() {
 
 	var data = flag.String("data", "", "The data directory where WOF data lives")
+	var cache_size = flag.Int("cache_size", 1024, "The number of WOF records (with large geometries) to cache")
 	var strict = flag.Bool("strict", false, "Enable strict placetype checking")
 
 	flag.Parse()
@@ -33,7 +34,7 @@ func main() {
 		panic("data does not exist")
 	}
 
-	p, p_err := pip.NewPointInPolygon(*data)
+	p, p_err := pip.NewPointInPolygon(*data, *cache_size)
 
 	if p_err != nil {
 		panic(p_err)
@@ -42,7 +43,7 @@ func main() {
 	var r metrics.Registry
 	r = *p.Metrics.Registry
 
-	go metrics.Log(r, 60e9, log.New(os.Stdout, "metrics: ", log.Lmicroseconds))
+	go metrics.Log(r, 10e9, log.New(os.Stdout, "metrics: ", log.Lmicroseconds))
 
 	t1 := time.Now()
 

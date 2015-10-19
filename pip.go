@@ -23,23 +23,63 @@ type WOFPointInPolygonTiming struct {
 
 type WOFPointInPolygonMetrics struct {
 	Registry      *metrics.Registry
-	Lookups       *metrics.Counter
+	CountUnmarshal *metrics.Counter
+	CountCacheHit *metrics.Counter
+	CountCacheMiss *metrics.Counter
+	CountCacheSet *metrics.Counter
+	CountLookups    *metrics.Counter
+	TimeToUnmarshal *metrics.GaugeFloat64
 	TimeToProcess *metrics.GaugeFloat64
+}
+
+func NewPointInPolygonMetrics() *WOFPointInPolygonMetrics {
+
+	registry := metrics.NewRegistry()
+
+	cnt_lookups := metrics.NewCounter()
+	cnt_unmarshal := metrics.NewCounter()
+	cnt_cache_hit := metrics.NewCounter()
+	cnt_cache_miss := metrics.NewCounter()
+	cnt_cache_set := metrics.NewCounter()
+
+	tt_unmarshal := metrics.NewGaugeFloat64()
+	tt_process := metrics.NewGaugeFloat64()
+
+	registry.Register("lookups", cnt_lookups)
+	registry.Register("unmarshaled", cnt_unmarshal)
+	registry.Register("cache-hit", cnt_cache_hit)
+	registry.Register("cache-miss", cnt_cache_miss)
+	registry.Register("cache-set", cnt_cache_set)
+	registry.Register("time-to-process", tt_process)
+	registry.Register("time-to-unmarshal", tt_unmarshal)
+
+	m := WOFPointInPolygonMetrics{
+		Registry:      &registry,
+		CountLookups:   &cnt_lookups,
+		CountUnmarshal: &cnt_unmarshal,
+		CountCacheHit: &cnt_cache_hit,
+		CountCacheMiss: &cnt_cache_miss,
+		CountCacheSet: &cnt_cache_set,
+		TimeToProcess:  &tt_process,
+		TimeToUnmarshal: &tt_unmarshal,
+	}
+
+	return &m
 }
 
 type WOFPointInPolygon struct {
 	Rtree      *rtreego.Rtree
 	Cache      *lru.Cache
+	CacheSize  int
 	Source     string
 	Placetypes map[string]int
 	Metrics    *WOFPointInPolygonMetrics
 }
 
-func NewPointInPolygon(source string) (*WOFPointInPolygon, error) {
+func NewPointInPolygon(source string, cache_size int) (*WOFPointInPolygon, error) {
 
 	rt := rtreego.NewTree(2, 25, 50)
 
-	cache_size := 256
 	cache, err := lru.New(cache_size)
 
 	if err != nil {
@@ -54,6 +94,7 @@ func NewPointInPolygon(source string) (*WOFPointInPolygon, error) {
 		Rtree:      rt,
 		Source:     source,
 		Cache:      cache,
+		CacheSize:  cache_size,
 		Placetypes: pt,
 		Metrics:    m,
 	}
@@ -61,38 +102,18 @@ func NewPointInPolygon(source string) (*WOFPointInPolygon, error) {
 	return &pip, nil
 }
 
-func NewPointInPolygonMetrics() *WOFPointInPolygonMetrics {
+func (p WOFPointInPolygon) IndexGeoJSONFile(path string) error {
 
-	registry := metrics.NewRegistry()
-	lookups := metrics.NewCounter()
-	ttp := metrics.NewGaugeFloat64()
-
-	registry.Register("lookups", lookups)
-	registry.Register("time-to-process", ttp)
-
-	// go metrics.Log(registry, 10e9, log.New(os.Stdout, "metrics: ", log.Lmicroseconds))
-
-	m := WOFPointInPolygonMetrics{
-		Registry:      &registry,
-		Lookups:       &lookups,
-		TimeToProcess: &ttp,
-	}
-
-	return &m
-}
-
-func (p WOFPointInPolygon) IndexGeoJSONFile(source string) error {
-
-	feature, parse_err := geojson.UnmarshalFile(source)
+	feature, parse_err := p.LoadGeoJSON(path)
 
 	if parse_err != nil {
 		return parse_err
 	}
 
-	return p.IndexGeoJSONFeature(*feature)
+	return p.IndexGeoJSONFeature(feature)
 }
 
-func (p WOFPointInPolygon) IndexGeoJSONFeature(feature geojson.WOFFeature) error {
+func (p WOFPointInPolygon) IndexGeoJSONFeature(feature *geojson.WOFFeature) error {
 
 	spatial, spatial_err := feature.EnSpatialize()
 
@@ -111,6 +132,8 @@ func (p WOFPointInPolygon) IndexGeoJSONFeature(feature geojson.WOFFeature) error
 	}
 
 	p.Rtree.Insert(spatial)
+
+	p.LoadPolygonsForFeature(feature)
 	return nil
 }
 
@@ -194,7 +217,7 @@ func (p WOFPointInPolygon) GetByLatLon(lat float64, lon float64) ([]*geojson.WOF
 func (p WOFPointInPolygon) GetByLatLonForPlacetype(lat float64, lon float64, placetype string) ([]*geojson.WOFSpatial, []*WOFPointInPolygonTiming) {
 
 	var c metrics.Counter
-	c = *p.Metrics.Lookups
+	c = *p.Metrics.CountLookups
 	c.Inc(1)
 
 	timings := make([]*WOFPointInPolygonTiming, 0)
@@ -274,7 +297,7 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 
 	for _, wof := range results {
 
-		t1a := time.Now()
+		// t1a := time.Now()
 
 		polygons, err := p.LoadPolygons(wof)
 
@@ -283,15 +306,15 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 			continue
 		}
 
-		t1b := float64(time.Since(t1a)) / 1e9
-		fmt.Printf("[debug] time to load polygons is %f\n", t1b)
+		// t1b := float64(time.Since(t1a)) / 1e9
+		// fmt.Printf("[debug] time to load polygons is %f\n", t1b)
 
 		is_contained := false
 
-		count := len(polygons)
+		// count := len(polygons)
 		iters := 0
 
-		t3a := time.Now()
+		// t3a := time.Now()
 
 		for _, poly := range polygons {
 
@@ -304,8 +327,8 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 
 		}
 
-		t3b := float64(time.Since(t3a)) / 1e9
-		fmt.Printf("[debug] time to check containment (%t) after %d/%d possible iterations is %f\n", is_contained, iters, count, t3b)
+		// t3b := float64(time.Since(t3a)) / 1e9
+		// fmt.Printf("[debug] time to check containment (%t) after %d/%d possible iterations is %f\n", is_contained, iters, count, t3b)
 
 		if is_contained {
 			contained = append(contained, wof)
@@ -313,11 +336,35 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 
 	}
 
-	count_in := len(results)
-	count_out := len(contained)
+	// count_in := len(results)
+	// count_out := len(contained)
 
-	fmt.Printf("[debug] contained: %d/%d\n", count_out, count_in)
+	// fmt.Printf("[debug] contained: %d/%d\n", count_out, count_in)
 	return contained
+}
+
+func (p WOFPointInPolygon) LoadGeoJSON(path string) (*geojson.WOFFeature, error) {
+
+	t2a := time.Now()
+
+	feature, err := geojson.UnmarshalFile(path)
+
+	t2b := float64(time.Since(t2a)) / 1e9
+	// fmt.Printf("[debug] time to marshal %s is %f\n", path, t2b)
+
+	var g metrics.GaugeFloat64
+	g = *p.Metrics.TimeToUnmarshal
+	g.Update(t2b)
+
+	if err != nil {
+	   return nil, err
+	}
+
+	var c metrics.Counter
+	c = *p.Metrics.CountUnmarshal
+	c.Inc(1)
+
+	return feature, err
 }
 
 func (p WOFPointInPolygon) LoadPolygons(wof *geojson.WOFSpatial) ([]*geo.Polygon, error) {
@@ -328,25 +375,39 @@ func (p WOFPointInPolygon) LoadPolygons(wof *geojson.WOFSpatial) ([]*geo.Polygon
 
 	if ok {
 
-		fmt.Printf("[debug] return polygons from cache for %d\n", id)
+		var c metrics.Counter
+		c = *p.Metrics.CountCacheHit
+		c.Inc(1)
+
+		// fmt.Printf("[debug] return polygons from cache for %d\n", id)
 
 		polygons := cache.([]*geo.Polygon)
 		return polygons, nil
 	}
 
-	t2a := time.Now()
+	var c metrics.Counter
+	c = *p.Metrics.CountCacheMiss
+	c.Inc(1)
 
 	abs_path := utils.Id2AbsPath(p.Source, id)
-	feature, err := geojson.UnmarshalFile(abs_path)
-
-	t2b := float64(time.Since(t2a)) / 1e9
-	fmt.Printf("[debug] time to marshal %s is %f\n", abs_path, t2b)
+	feature, err := p.LoadGeoJSON(abs_path)
 
 	if err != nil {
 		return nil, err
 	}
 
-	t3a := time.Now()
+	polygons, poly_err := p.LoadPolygonsForFeature(feature)
+
+	if poly_err != nil {
+	   return nil, poly_err
+	}
+
+	return polygons, nil
+}
+
+func (p WOFPointInPolygon) LoadPolygonsForFeature(feature *geojson.WOFFeature) ([]*geo.Polygon, error) {
+
+	// t3a := time.Now()
 
 	polygons := feature.GeomToPolygons()
 	var points int
@@ -355,17 +416,28 @@ func (p WOFPointInPolygon) LoadPolygons(wof *geojson.WOFSpatial) ([]*geo.Polygon
 		points += len(p.Points())
 	}
 
-	t3b := float64(time.Since(t3a)) / 1e9
-	fmt.Printf("[debug] time to convert geom to polygons (%d points) is %f\n", points, t3b)
+	// t3b := float64(time.Since(t3a)) / 1e9
+	// fmt.Printf("[debug] time to convert geom to polygons (%d points) is %f\n", points, t3b)
 
-	if points >= 100 {
+	if points >= 1000 {
 
-		if p.Cache.Len() == 256 { // PLEASE DO NOT HARDCODE ME...
-			p.Cache.RemoveOldest()
+		var c metrics.Counter
+		c = *p.Metrics.CountCacheSet
+
+	   	id := feature.WOFId()
+		evicted := p.Cache.Add(id, polygons)
+
+		if evicted == true {
+
+			cache_size := p.CacheSize
+			cache_set := c.Count()
+
+			fmt.Printf("starting to push thing out of the cache %d sets on a cache size of %d", cache_set, cache_size)
 		}
 
-		_ = p.Cache.Add(id, polygons)
-		fmt.Printf("[cache] %d because so many points (%d)\n", id, points)
+		c.Inc(1)
+
+		// fmt.Printf("[cache] %d because so many points (%d)\n", id, points)
 	}
 
 	return polygons, nil
