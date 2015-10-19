@@ -2,14 +2,11 @@ package main
 
 import (
 	"encoding/json"
-	_ "expvar"
 	"flag"
-	"fmt"
-	metrics "github.com/rcrowley/go-metrics"
 	"github.com/whosonfirst/go-whosonfirst-geojson"
-	"github.com/whosonfirst/go-whosonfirst-pip"
 	log "github.com/whosonfirst/go-whosonfirst-log"
-	golog "log"
+	"github.com/whosonfirst/go-whosonfirst-pip"
+	"io"
 	"net/http"
 	"os"
 	"strconv"
@@ -19,8 +16,11 @@ import (
 func main() {
 
 	var data = flag.String("data", "", "The data directory where WOF data lives")
-	var cache_size = flag.Int("cache_size", 1024, "The number of WOF records (with large geometries) to cache")
+	var cache_size = flag.Int("cache_size", 1024, "The number of WOF records with large geometries to cache (default is 1024)")
 	var strict = flag.Bool("strict", false, "Enable strict placetype checking")
+	var logs = flag.String("logs", "", "Where to write logs to disk")
+	var metrics = flag.String("metrics", "", "Where to write metrics to disk")
+	var verbose = flag.Bool("verbose", false, "Enable verbose logging")
 
 	flag.Parse()
 	args := flag.Args()
@@ -35,7 +35,33 @@ func main() {
 		panic("data does not exist")
 	}
 
-	logger := log.NewWOFLogger(os.Stdout, "[pip-server]", "debug")
+	loglevel := "info"
+
+	if *verbose {
+		loglevel = "debug"
+	}
+
+	var l_writer io.Writer
+	var m_writer io.Writer
+
+	l_writer = io.MultiWriter(os.Stdout)
+
+	if *logs != "" {
+
+		l_file, l_err := os.OpenFile(*logs, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0660)
+
+		if l_err != nil {
+			panic(l_err)
+		}
+
+		if *verbose {
+			l_writer = io.MultiWriter(os.Stdout, l_file)
+		} else {
+			l_writer = io.MultiWriter(l_file)
+		}
+	}
+
+	logger := log.NewWOFLogger(l_writer, "[pip-server] ", loglevel)
 
 	p, p_err := pip.NewPointInPolygon(*data, *cache_size, logger)
 
@@ -43,10 +69,17 @@ func main() {
 		panic(p_err)
 	}
 
-	var r metrics.Registry
-	r = *p.Metrics.Registry
+	if *metrics != "" {
 
-	go metrics.Log(r, 10e9, golog.New(os.Stdout, "metrics: ", golog.Lmicroseconds))
+		m_file, m_err := os.OpenFile(*metrics, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0660)
+
+		if m_err != nil {
+			panic(m_err)
+		}
+
+		m_writer = io.MultiWriter(m_file)
+		p.SendMetricsTo(m_writer, 60e9)
+	}
 
 	t1 := time.Now()
 
@@ -56,10 +89,10 @@ func main() {
 
 	t2 := float64(time.Since(t1)) / 1e9
 
-	fmt.Printf("indexed %d records in %.3f seconds \n", p.Rtree.Size(), t2)
+	p.Logger.Info("indexed %d records in %.3f seconds \n", p.Rtree.Size(), t2)
 
 	for pt, count := range p.Placetypes {
-		fmt.Printf("[placetype] %s %d\n", pt, count)
+		p.Logger.Info("indexed %s: %d\n", pt, count)
 	}
 
 	handler := func(rsp http.ResponseWriter, req *http.Request) {
@@ -104,7 +137,6 @@ func main() {
 		}
 
 		results := make([]*geojson.WOFSpatial, 0)
-		timings := make([]*pip.WOFPointInPolygonTiming, 0)
 
 		if placetype != "" {
 
@@ -114,15 +146,17 @@ func main() {
 			}
 		}
 
-		results, timings = p.GetByLatLonForPlacetype(lat, lon, placetype)
+		results, _ = p.GetByLatLonForPlacetype(lat, lon, placetype)
 
-		count := len(results)
+		/*
+			count := len(results)
 
-		fmt.Printf("[timings] %f, %f (%d results)\n", lat, lon, count)
+			fmt.Printf("[timings] %f, %f (%d results)\n", lat, lon, count)
 
-		for _, t := range timings {
-			fmt.Printf("[timing] %s: %f\n", t.Event, t.Duration)
-		}
+			for _, t := range timings {
+				fmt.Printf("[timing] %s: %f\n", t.Event, t.Duration)
+			}
+		*/
 
 		js, err := json.Marshal(results)
 

@@ -5,10 +5,10 @@ import (
 	lru "github.com/hashicorp/golang-lru"
 	geo "github.com/kellydunn/golang-geo"
 	metrics "github.com/rcrowley/go-metrics"
-	geojson "github.com/whosonfirst/go-whosonfirst-geojson"
-	utils "github.com/whosonfirst/go-whosonfirst-utils"
 	csv "github.com/whosonfirst/go-whosonfirst-csv"
+	geojson "github.com/whosonfirst/go-whosonfirst-geojson"
 	log "github.com/whosonfirst/go-whosonfirst-log"
+	utils "github.com/whosonfirst/go-whosonfirst-utils"
 	"io"
 	"os"
 	"path"
@@ -94,15 +94,15 @@ type WOFPointInPolygon struct {
 	Source     string
 	Placetypes map[string]int
 	Metrics    *WOFPointInPolygonMetrics
-	Logger	   *log.WOFLogger
+	Logger     *log.WOFLogger
 }
 
 func NewPointInPolygonSimple(source string) (*WOFPointInPolygon, error) {
 
-     cache_size := 100
-     logger := log.NewWOFLogger(os.Stdout, "[pip-server]", "debug")     
+	cache_size := 100
+	logger := log.NewWOFLogger(os.Stdout, "[pip-server]", "debug")
 
-     return NewPointInPolygon(source, cache_size, logger)
+	return NewPointInPolygon(source, cache_size, logger)
 }
 
 func NewPointInPolygon(source string, cache_size int, logger *log.WOFLogger) (*WOFPointInPolygon, error) {
@@ -126,15 +126,23 @@ func NewPointInPolygon(source string, cache_size int, logger *log.WOFLogger) (*W
 		CacheSize:  cache_size,
 		Placetypes: placetypes,
 		Metrics:    metrics,
-		Logger:	    logger,
+		Logger:     logger,
 	}
 
 	return &pip, nil
 }
 
+func (p WOFPointInPolygon) SendMetricsTo(w io.Writer, d time.Duration) {
+
+	var r metrics.Registry
+	r = *p.Metrics.Registry
+
+	go metrics.WriteJSON(r, d, w)
+}
+
 func (p WOFPointInPolygon) IndexGeoJSONFile(path string) error {
 
-     	p.Logger.Debug("index %s", path)
+	p.Logger.Debug("index %s", path)
 
 	feature, parse_err := p.LoadGeoJSON(path)
 
@@ -172,7 +180,7 @@ func (p WOFPointInPolygon) IndexGeoJSONFeature(feature *geojson.WOFFeature) erro
 
 func (p WOFPointInPolygon) IndexMetaFile(csv_file string) error {
 
-     	reader, reader_err := csv.NewDictReader(csv_file)
+	reader, reader_err := csv.NewDictReader(csv_file)
 
 	if reader_err != nil {
 		p.Logger.Error("failed to create CSV reader , because %s", reader_err)
@@ -187,15 +195,15 @@ func (p WOFPointInPolygon) IndexMetaFile(csv_file string) error {
 		}
 
 		if err != nil {
-		        p.Logger.Error("failed to parse CSV row , because %s", err)
+			p.Logger.Error("failed to parse CSV row , because %s", err)
 			return err
 		}
 
 		rel_path, ok := row["path"]
 
 		if ok != true {
-		   p.Logger.Warning("CSV row is missing a 'path' column")
-		   continue
+			p.Logger.Warning("CSV row is missing a 'path' column")
+			continue
 		}
 
 		abs_path := path.Join(p.Source, rel_path)
@@ -269,7 +277,7 @@ func (p WOFPointInPolygon) GetByLatLon(lat float64, lon float64) ([]*geojson.WOF
 
 func (p WOFPointInPolygon) GetByLatLonForPlacetype(lat float64, lon float64, placetype string) ([]*geojson.WOFSpatial, []*WOFPointInPolygonTiming) {
 
-     	p.Logger.Debug("get by lat for %f, %f (%s)", lat, lon, placetype)
+	p.Logger.Debug("get by lat for %f, %f (%s)", lat, lon, placetype)
 
 	var c metrics.Counter
 	c = *p.Metrics.CountLookups
