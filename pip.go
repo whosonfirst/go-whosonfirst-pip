@@ -70,6 +70,9 @@ func NewPointInPolygonMetrics() *WOFPointInPolygonMetrics {
 		TimeToProcess:   &tm_process,
 	}
 
+	metrics.RegisterRuntimeMemStats(registry)
+	go metrics.CaptureRuntimeMemStats(registry, 10e9)
+
 	return &m
 }
 
