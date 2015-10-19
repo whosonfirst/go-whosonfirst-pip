@@ -28,8 +28,8 @@ type WOFPointInPolygonMetrics struct {
 	CountCacheMiss *metrics.Counter
 	CountCacheSet *metrics.Counter
 	CountLookups    *metrics.Counter
-	TimeToUnmarshal *metrics.GaugeFloat64
-	TimeToProcess *metrics.GaugeFloat64
+	TimeToProcess *metrics.Timer
+	TimeToUnmarshal *metrics.Timer
 }
 
 func NewPointInPolygonMetrics() *WOFPointInPolygonMetrics {
@@ -42,16 +42,16 @@ func NewPointInPolygonMetrics() *WOFPointInPolygonMetrics {
 	cnt_cache_miss := metrics.NewCounter()
 	cnt_cache_set := metrics.NewCounter()
 
-	tt_unmarshal := metrics.NewGaugeFloat64()
-	tt_process := metrics.NewGaugeFloat64()
+	tm_process := metrics.NewTimer()
+	tm_unmarshal := metrics.NewTimer()
 
 	registry.Register("lookups", cnt_lookups)
 	registry.Register("unmarshaled", cnt_unmarshal)
 	registry.Register("cache-hit", cnt_cache_hit)
 	registry.Register("cache-miss", cnt_cache_miss)
 	registry.Register("cache-set", cnt_cache_set)
-	registry.Register("time-to-process", tt_process)
-	registry.Register("time-to-unmarshal", tt_unmarshal)
+	registry.Register("time-to-process", tm_process)
+	registry.Register("time-to-unmarshal", tm_unmarshal)
 
 	m := WOFPointInPolygonMetrics{
 		Registry:      &registry,
@@ -60,8 +60,8 @@ func NewPointInPolygonMetrics() *WOFPointInPolygonMetrics {
 		CountCacheHit: &cnt_cache_hit,
 		CountCacheMiss: &cnt_cache_miss,
 		CountCacheSet: &cnt_cache_set,
-		TimeToProcess:  &tt_process,
-		TimeToUnmarshal: &tt_unmarshal,
+		TimeToProcess:  &tm_process,
+		TimeToUnmarshal: &tm_unmarshal,
 	}
 
 	return &m
@@ -222,12 +222,12 @@ func (p WOFPointInPolygon) GetByLatLonForPlacetype(lat float64, lon float64, pla
 
 	timings := make([]*WOFPointInPolygonTiming, 0)
 
-	t1a := time.Now()
+	t1 := time.Now()
 
 	intersects := p.GetIntersectsByLatLon(lat, lon)
 
-	t1b := float64(time.Since(t1a)) / 1e9
-	timings = append(timings, &WOFPointInPolygonTiming{"intersects", t1b})
+	//t1b := float64(time.Since(t1a)) / 1e9
+	//timings = append(timings, &WOFPointInPolygonTiming{"intersects", t1b})
 
 	t2a := time.Now()
 
@@ -260,18 +260,10 @@ func (p WOFPointInPolygon) GetByLatLonForPlacetype(lat float64, lon float64, pla
 	t4b := float64(time.Since(t4a)) / 1e9
 	timings = append(timings, &WOFPointInPolygonTiming{"contained", t4b})
 
-	/*
-		ttp := float64(time.Since(t1a)) / 1e9
 
-		var g metrics.GaugeFloat64
-		g = *p.Metrics.TimeToProcess
-		g.Update(ttp)
-
-		var r metrics.Registry
-		r = *p.Metrics.Registry
-
-
-	*/
+	var tm metrics.Timer
+	tm = *p.Metrics.TimeToProcess
+	tm.Update(time.Since(t1))
 
 	return contained, timings
 }
@@ -345,16 +337,14 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 
 func (p WOFPointInPolygon) LoadGeoJSON(path string) (*geojson.WOFFeature, error) {
 
-	t2a := time.Now()
+	t := time.Now()
 
 	feature, err := geojson.UnmarshalFile(path)
 
-	t2b := float64(time.Since(t2a)) / 1e9
-	// fmt.Printf("[debug] time to marshal %s is %f\n", path, t2b)
+	var tm metrics.Timer
+	tm = *p.Metrics.TimeToUnmarshal
 
-	var g metrics.GaugeFloat64
-	g = *p.Metrics.TimeToUnmarshal
-	g.Update(t2b)
+	tm.Update(time.Since(t))
 
 	if err != nil {
 	   return nil, err
@@ -378,8 +368,6 @@ func (p WOFPointInPolygon) LoadPolygons(wof *geojson.WOFSpatial) ([]*geo.Polygon
 		var c metrics.Counter
 		c = *p.Metrics.CountCacheHit
 		c.Inc(1)
-
-		// fmt.Printf("[debug] return polygons from cache for %d\n", id)
 
 		polygons := cache.([]*geo.Polygon)
 		return polygons, nil
