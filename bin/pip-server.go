@@ -48,7 +48,7 @@ func main() {
 	t1 := time.Now()
 
 	for _, path := range args {
-		p.IndexMetaFile(path, 12)
+		p.IndexMetaFile(path)
 	}
 
 	t2 := float64(time.Since(t1)) / 1e9

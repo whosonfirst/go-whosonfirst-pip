@@ -11,7 +11,6 @@ import (
 func main() {
 
 	var source = flag.String("source", "", "The source directory where WOF data lives")
-	var offset = flag.Int("offset", 0, "The (start by zero) offset at which the relative path for a record lives (THIS IS NOT A FEATURE)")
 
 	flag.Parse()
 	args := flag.Args()
@@ -36,7 +35,7 @@ func main() {
 
 	for _, path := range args {
 
-		p.IndexMetaFile(path, *offset)
+		p.IndexMetaFile(path)
 	}
 
 	t2 := float64(time.Since(t1)) / 1e9

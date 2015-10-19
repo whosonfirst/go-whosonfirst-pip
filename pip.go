@@ -1,7 +1,6 @@
 package pip
 
 import (
-	"encoding/csv"
 	"fmt"
 	rtreego "github.com/dhconnelly/rtreego"
 	lru "github.com/hashicorp/golang-lru"
@@ -9,26 +8,13 @@ import (
 	metrics "github.com/rcrowley/go-metrics"
 	geojson "github.com/whosonfirst/go-whosonfirst-geojson"
 	utils "github.com/whosonfirst/go-whosonfirst-utils"
+	csv "github.com/whosonfirst/go-whosonfirst-csv"
 	"io"
 	_ "log"
 	"os"
 	"path"
 	"time"
 )
-
-type WOFPointInPolygonTiming struct {
-	Event    string
-	Duration float64
-}
-
-func NewWOFPointInPolygonTiming(event string, d time.Duration) *WOFPointInPolygonTiming {
-
-	df := float64(d) / 1e9
-
-	t := WOFPointInPolygonTiming{Event: event, Duration: df}
-	return &t
-
-}
 
 type WOFPointInPolygonMetrics struct {
 	Registry        *metrics.Registry
@@ -86,6 +72,20 @@ func NewPointInPolygonMetrics() *WOFPointInPolygonMetrics {
 	}
 
 	return &m
+}
+
+type WOFPointInPolygonTiming struct {
+	Event    string
+	Duration float64
+}
+
+func NewWOFPointInPolygonTiming(event string, d time.Duration) *WOFPointInPolygonTiming {
+
+	df := float64(d) / 1e9
+
+	t := WOFPointInPolygonTiming{Event: event, Duration: df}
+	return &t
+
 }
 
 type WOFPointInPolygon struct {
@@ -158,18 +158,16 @@ func (p WOFPointInPolygon) IndexGeoJSONFeature(feature *geojson.WOFFeature) erro
 	return nil
 }
 
-func (p WOFPointInPolygon) IndexMetaFile(csv_file string, offset int) error {
+func (p WOFPointInPolygon) IndexMetaFile(csv_file string) error {
 
-	body, read_err := os.Open(csv_file)
+     	reader, reader_err := csv.NewDictReader(csv_file)
 
-	if read_err != nil {
-		return read_err
+	if reader_err != nil {
+		return reader_err
 	}
 
-	r := csv.NewReader(body)
-
 	for {
-		record, err := r.Read()
+		row, err := reader.Read()
 
 		if err == io.EOF {
 			break
@@ -179,10 +177,12 @@ func (p WOFPointInPolygon) IndexMetaFile(csv_file string, offset int) error {
 			return err
 		}
 
-		// sudo my kingdom for a DictReader in Go...
-		// (20151013/thisisaaronland)
+		rel_path, ok := row["path"]
 
-		rel_path := record[offset]
+		if ok != true {
+		   continue
+		}
+
 		abs_path := path.Join(p.Source, rel_path)
 
 		_, err = os.Stat(abs_path)
