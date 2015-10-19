@@ -1,7 +1,6 @@
 package pip
 
 import (
-	"fmt"
 	rtreego "github.com/dhconnelly/rtreego"
 	lru "github.com/hashicorp/golang-lru"
 	geo "github.com/kellydunn/golang-geo"
@@ -9,8 +8,8 @@ import (
 	geojson "github.com/whosonfirst/go-whosonfirst-geojson"
 	utils "github.com/whosonfirst/go-whosonfirst-utils"
 	csv "github.com/whosonfirst/go-whosonfirst-csv"
+	log "github.com/whosonfirst/go-whosonfirst-log"
 	"io"
-	_ "log"
 	"os"
 	"path"
 	"time"
@@ -53,7 +52,7 @@ func NewPointInPolygonMetrics() *WOFPointInPolygonMetrics {
 	registry.Register("cache-set", cnt_cache_set)
 	registry.Register("time-to-process", tm_process)
 	registry.Register("time-to-unmarshal", tm_unmarshal)
-	registry.Register("time-to-intersect", tm_intersect)
+	// registry.Register("time-to-intersect", tm_intersect)
 	// registry.Register("time-to-inflate", tm_inflate)
 	registry.Register("time-to-contain", tm_contain)
 
@@ -95,11 +94,20 @@ type WOFPointInPolygon struct {
 	Source     string
 	Placetypes map[string]int
 	Metrics    *WOFPointInPolygonMetrics
+	Logger	   *log.WOFLogger
 }
 
-func NewPointInPolygon(source string, cache_size int) (*WOFPointInPolygon, error) {
+func NewPointInPolygonSimple(source string) (*WOFPointInPolygon, error) {
 
-	rt := rtreego.NewTree(2, 25, 50)
+     cache_size := 100
+     logger := log.NewWOFLogger(os.Stdout, "[pip-server]", "debug")     
+
+     return NewPointInPolygon(source, cache_size, logger)
+}
+
+func NewPointInPolygon(source string, cache_size int, logger *log.WOFLogger) (*WOFPointInPolygon, error) {
+
+	rtree := rtreego.NewTree(2, 25, 50)
 
 	cache, err := lru.New(cache_size)
 
@@ -107,23 +115,26 @@ func NewPointInPolygon(source string, cache_size int) (*WOFPointInPolygon, error
 		return nil, err
 	}
 
-	m := NewPointInPolygonMetrics()
+	metrics := NewPointInPolygonMetrics()
 
-	pt := make(map[string]int)
+	placetypes := make(map[string]int)
 
 	pip := WOFPointInPolygon{
-		Rtree:      rt,
+		Rtree:      rtree,
 		Source:     source,
 		Cache:      cache,
 		CacheSize:  cache_size,
-		Placetypes: pt,
-		Metrics:    m,
+		Placetypes: placetypes,
+		Metrics:    metrics,
+		Logger:	    logger,
 	}
 
 	return &pip, nil
 }
 
 func (p WOFPointInPolygon) IndexGeoJSONFile(path string) error {
+
+     	p.Logger.Debug("index %s", path)
 
 	feature, parse_err := p.LoadGeoJSON(path)
 
@@ -139,6 +150,7 @@ func (p WOFPointInPolygon) IndexGeoJSONFeature(feature *geojson.WOFFeature) erro
 	spatial, spatial_err := feature.EnSpatialize()
 
 	if spatial_err != nil {
+		p.Logger.Error("failed to enspatialize feature, because %s", spatial_err)
 		return spatial_err
 	}
 
@@ -163,6 +175,7 @@ func (p WOFPointInPolygon) IndexMetaFile(csv_file string) error {
      	reader, reader_err := csv.NewDictReader(csv_file)
 
 	if reader_err != nil {
+		p.Logger.Error("failed to create CSV reader , because %s", reader_err)
 		return reader_err
 	}
 
@@ -174,12 +187,14 @@ func (p WOFPointInPolygon) IndexMetaFile(csv_file string) error {
 		}
 
 		if err != nil {
+		        p.Logger.Error("failed to parse CSV row , because %s", err)
 			return err
 		}
 
 		rel_path, ok := row["path"]
 
 		if ok != true {
+		   p.Logger.Warning("CSV row is missing a 'path' column")
 		   continue
 		}
 
@@ -188,14 +203,14 @@ func (p WOFPointInPolygon) IndexMetaFile(csv_file string) error {
 		_, err = os.Stat(abs_path)
 
 		if os.IsNotExist(err) {
-			// fmt.Printf("OH NO - can't find %s\n", abs_path)
+			p.Logger.Error("'%s' does not exist", abs_path)
 			continue
 		}
 
 		index_err := p.IndexGeoJSONFile(abs_path)
 
 		if index_err != nil {
-			// fmt.Printf("FAILED TO INDEX %s, because %s", abs_path, index_err)
+			p.Logger.Error("failed to index '%s', because %s", abs_path, index_err)
 			return index_err
 		}
 	}
@@ -253,6 +268,8 @@ func (p WOFPointInPolygon) GetByLatLon(lat float64, lon float64) ([]*geojson.WOF
 }
 
 func (p WOFPointInPolygon) GetByLatLonForPlacetype(lat float64, lon float64, placetype string) ([]*geojson.WOFSpatial, []*WOFPointInPolygonTiming) {
+
+     	p.Logger.Debug("get by lat for %f, %f (%s)", lat, lon, placetype)
 
 	var c metrics.Counter
 	c = *p.Metrics.CountLookups
@@ -318,9 +335,9 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 
 	pt := geo.NewPoint(lat, lon)
 
-	for _, wof := range results {
+	// please do this with a waitgroup or something
 
-		// t1a := time.Now()
+	for _, wof := range results {
 
 		polygons, err := p.LoadPolygons(wof)
 
@@ -329,29 +346,22 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 			continue
 		}
 
-		// t1b := float64(time.Since(t1a)) / 1e9
-		// fmt.Printf("[debug] time to load polygons is %f\n", t1b)
-
 		is_contained := false
 
-		// count := len(polygons)
+		count := len(polygons)
 		iters := 0
-
-		// t3a := time.Now()
 
 		for _, poly := range polygons {
 
 			iters += 1
 
 			if poly.Contains(pt) {
+				p.Logger.Debug("point is contained after checking %d/%d polygons", iters, count)
 				is_contained = true
 				break
 			}
 
 		}
-
-		// t3b := float64(time.Since(t3a)) / 1e9
-		// fmt.Printf("[debug] time to check containment (%t) after %d/%d possible iterations is %f\n", is_contained, iters, count, t3b)
 
 		if is_contained {
 			contained = append(contained, wof)
@@ -365,10 +375,11 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 	tm = *p.Metrics.TimeToContain
 	tm.Update(d)
 
-	// count_in := len(results)
-	// count_out := len(contained)
+	count_in := len(results)
+	count_out := len(contained)
 
-	// fmt.Printf("[debug] contained: %d/%d\n", count_out, count_in)
+	p.Logger.Debug("contained: %d/%d\n", count_out, count_in)
+
 	return contained, d
 }
 
@@ -386,6 +397,7 @@ func (p WOFPointInPolygon) LoadGeoJSON(path string) (*geojson.WOFFeature, error)
 	tm.Update(d)
 
 	if err != nil {
+		p.Logger.Error("failed to unmarshal %s, because %s", path, err)
 		return nil, err
 	}
 
@@ -434,8 +446,6 @@ func (p WOFPointInPolygon) LoadPolygons(wof *geojson.WOFSpatial) ([]*geo.Polygon
 
 func (p WOFPointInPolygon) LoadPolygonsForFeature(feature *geojson.WOFFeature) ([]*geo.Polygon, error) {
 
-	// t3a := time.Now()
-
 	polygons := feature.GeomToPolygons()
 	var points int
 
@@ -443,15 +453,15 @@ func (p WOFPointInPolygon) LoadPolygonsForFeature(feature *geojson.WOFFeature) (
 		points += len(p.Points())
 	}
 
-	// t3b := float64(time.Since(t3a)) / 1e9
-	// fmt.Printf("[debug] time to convert geom to polygons (%d points) is %f\n", points, t3b)
-
 	if points >= 1000 {
+
+		id := feature.WOFId()
+
+		p.Logger.Info("caching %d because it has E_EXCESSIVE_POINTS (%d)", id, points)
 
 		var c metrics.Counter
 		c = *p.Metrics.CountCacheSet
 
-		id := feature.WOFId()
 		evicted := p.Cache.Add(id, polygons)
 
 		if evicted == true {
@@ -459,12 +469,10 @@ func (p WOFPointInPolygon) LoadPolygonsForFeature(feature *geojson.WOFFeature) (
 			cache_size := p.CacheSize
 			cache_set := c.Count()
 
-			fmt.Printf("starting to push thing out of the cache %d sets on a cache size of %d", cache_set, cache_size)
+			p.Logger.Warning("starting to push thing out of the cache %d sets on a cache size of %d", cache_set, cache_size)
 		}
 
 		c.Inc(1)
-
-		// fmt.Printf("[cache] %d because so many points (%d)\n", id, points)
 	}
 
 	return polygons, nil

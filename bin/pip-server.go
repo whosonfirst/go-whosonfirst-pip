@@ -8,7 +8,8 @@ import (
 	metrics "github.com/rcrowley/go-metrics"
 	"github.com/whosonfirst/go-whosonfirst-geojson"
 	"github.com/whosonfirst/go-whosonfirst-pip"
-	"log"
+	log "github.com/whosonfirst/go-whosonfirst-log"
+	golog "log"
 	"net/http"
 	"os"
 	"strconv"
@@ -34,7 +35,9 @@ func main() {
 		panic("data does not exist")
 	}
 
-	p, p_err := pip.NewPointInPolygon(*data, *cache_size)
+	logger := log.NewWOFLogger(os.Stdout, "[pip-server]", "debug")
+
+	p, p_err := pip.NewPointInPolygon(*data, *cache_size, logger)
 
 	if p_err != nil {
 		panic(p_err)
@@ -43,7 +46,7 @@ func main() {
 	var r metrics.Registry
 	r = *p.Metrics.Registry
 
-	go metrics.Log(r, 10e9, log.New(os.Stdout, "metrics: ", log.Lmicroseconds))
+	go metrics.Log(r, 10e9, golog.New(os.Stdout, "metrics: ", golog.Lmicroseconds))
 
 	t1 := time.Now()
 
