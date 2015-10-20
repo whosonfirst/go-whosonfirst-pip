@@ -192,7 +192,7 @@ func (p WOFPointInPolygon) IndexGeoJSONFeature(feature *geojson.WOFFeature) erro
 
 	p.Rtree.Insert(spatial)
 
-	p.LoadPolygonsForFeature(feature)
+	go p.LoadPolygonsForFeature(feature)
 	return nil
 }
 
@@ -295,8 +295,6 @@ func (p WOFPointInPolygon) GetByLatLon(lat float64, lon float64) ([]*geojson.WOF
 
 func (p WOFPointInPolygon) GetByLatLonForPlacetype(lat float64, lon float64, placetype string) ([]*geojson.WOFSpatial, []*WOFPointInPolygonTiming) {
 
-	p.Logger.Debug("get by lat for %f, %f (%s)", lat, lon, placetype)
-
 	var c metrics.Counter
 	c = *p.Metrics.CountLookups
 	c.Inc(1)
@@ -332,6 +330,12 @@ func (p WOFPointInPolygon) GetByLatLonForPlacetype(lat float64, lon float64, pla
 	var tm metrics.Timer
 	tm = *p.Metrics.TimeToProcess
 	tm.Update(d)
+
+	ttp := float64(d) / 1e9
+
+	if ttp > 0.5 {
+		p.Logger.Warning("time to process %f,%f (%s) exceeds 0.5 seconds: %f", lat, lon, placetype, ttp)
+	}
 
 	return contained, timings
 }
@@ -416,6 +420,12 @@ func (p WOFPointInPolygon) LoadGeoJSON(path string) (*geojson.WOFFeature, error)
 	feature, err := geojson.UnmarshalFile(path)
 
 	d := time.Since(t)
+
+	ttl := float64(d) / 1e9
+
+	if ttl > 0.1 {
+		p.Logger.Warning("time to load %s exceeds 0.1 seconds: %f", path, ttl)
+	}
 
 	var tm metrics.Timer
 	tm = *p.Metrics.TimeToUnmarshal
