@@ -428,12 +428,14 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 		is_contained := false
 
 		count := len(polygons)
+		points := 0
 		iters := 0
 
 		t2 := time.Now()
 
 		for _, poly := range polygons {
 
+			points += len(poly.Points())
 			iters += 1
 
 			if poly.Contains(pt) {
@@ -446,7 +448,7 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 
 		d2 := time.Since(t2)
 
-		contain_event := fmt.Sprintf("contain_%d (%d/%d iterations)", i, iters, count)
+		contain_event := fmt.Sprintf("contain_%d (%d/%d iterations, %d points)", i, iters, count, points)
 		timings = append(timings, NewWOFPointInPolygonTiming(contain_event, d2))
 
 		if is_contained {
