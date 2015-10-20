@@ -145,7 +145,7 @@ func (p WOFPointInPolygon) SendMetricsTo(w io.Writer, d time.Duration, format st
 	var r metrics.Registry
 	r = *p.Metrics.Registry
 
-	if format == "log" {
+	if format == "plain" {
 		l := golog.New(w, "[pip-metrics] ", golog.Lmicroseconds)
 		go metrics.Log(r, d, l)
 		return true
@@ -370,6 +370,10 @@ func (p WOFPointInPolygon) GetByLatLonForPlacetype(lat float64, lon float64, pla
 
 	if ttp > 0.5 {
 		p.Logger.Warning("time to process %f,%f (%s) exceeds 0.5 seconds: %f", lat, lon, placetype, ttp)
+
+		for _, t := range timings {
+			p.Logger.Info("[%s] %f", t.Event, t.Duration)
+		}
 	}
 
 	return contained, timings
@@ -522,7 +526,7 @@ func (p WOFPointInPolygon) LoadPolygonsForFeature(feature *geojson.WOFFeature) (
 
 		id := feature.WOFId()
 
-		p.Logger.Info("caching %d because it has E_EXCESSIVE_POINTS (%d)", id, points)
+		p.Logger.Debug("caching %d because it has E_EXCESSIVE_POINTS (%d)", id, points)
 
 		var c metrics.Counter
 		c = *p.Metrics.CountCacheSet

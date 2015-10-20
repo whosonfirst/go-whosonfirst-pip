@@ -158,9 +158,9 @@ func main() {
 		}
 
 		if placetype != "" {
-			p.Logger.Info("time to reverse geocode %f, %f @%s: %d results in %f seconds ", lat, lon, placetype, count, ttp)
+			p.Logger.Debug("time to reverse geocode %f, %f @%s: %d results in %f seconds ", lat, lon, placetype, count, ttp)
 		} else {
-			p.Logger.Info("time to reverse geocode %f, %f: %d results in %f seconds ", lat, lon, count, ttp)
+			p.Logger.Debug("time to reverse geocode %f, %f: %d results in %f seconds ", lat, lon, count, ttp)
 		}
 
 		js, err := json.Marshal(results)
