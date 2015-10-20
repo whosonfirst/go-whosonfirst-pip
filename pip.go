@@ -1,6 +1,7 @@
 package pip
 
 import (
+	"fmt"
 	rtreego "github.com/dhconnelly/rtreego"
 	lru "github.com/hashicorp/golang-lru"
 	geo "github.com/kellydunn/golang-geo"
@@ -404,11 +405,20 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 
 	pt := geo.NewPoint(lat, lon)
 
+	timings := make([]*WOFPointInPolygonTiming, 0)
+
 	// please do this with a waitgroup or something
 
-	for _, wof := range results {
+	for i, wof := range results {
+
+		t1 := time.Now()
 
 		polygons, err := p.LoadPolygons(wof)
+
+		d1 := time.Since(t1)
+
+		load_event := fmt.Sprintf("load_%d", i)
+		timings = append(timings, NewWOFPointInPolygonTiming(load_event, d1))
 
 		if err != nil {
 			// please log me
@@ -419,6 +429,8 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 
 		count := len(polygons)
 		iters := 0
+
+		t2 := time.Now()
 
 		for _, poly := range polygons {
 
@@ -431,6 +443,11 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 			}
 
 		}
+
+		d2 := time.Since(t2)
+
+		contain_event := fmt.Sprintf("contain_%d (%d/%d iterations)", i, iters, count)
+		timings = append(timings, NewWOFPointInPolygonTiming(contain_event, d2))
 
 		if is_contained {
 			contained = append(contained, wof)
@@ -448,6 +465,17 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 	count_out := len(contained)
 
 	p.Logger.Debug("contained: %d/%d\n", count_out, count_in)
+
+	ttc := float64(d) / 1e9
+
+	if ttc > 0.4 {
+
+		p.Logger.Warning("time to contains exceeds threshold of 0.4 seconds: %f", ttc)
+
+		for _, t := range timings {
+			p.Logger.Info("[%s] %f", t.Event, t.Duration)
+		}
+	}
 
 	return contained, d
 }
