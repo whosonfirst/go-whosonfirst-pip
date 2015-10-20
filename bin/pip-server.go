@@ -16,14 +16,14 @@ import (
 func main() {
 
 	var port = flag.Int("port", 8080, "The port number to listen for requests on")
-	var data = flag.String("data", "", "The data directory where WOF data lives")
+	var data = flag.String("data", "", "The data directory where WOF data lives, required")
 	var cache_size = flag.Int("cache_size", 1024, "The number of WOF records with large geometries to cache")
 	var cache_trigger = flag.Int("cache_trigger", 5000, "The minimum number of coordinates in a WOF record that will trigger caching")
 	var strict = flag.Bool("strict", false, "Enable strict placetype checking")
 	var logs = flag.String("logs", "", "Where to write logs to disk")
-	var metrics = flag.String("metrics", "", "Where to write metrics to disk")
-	var format = flag.String("format", "json", "Format metrics as... ? (default is JSON)")
-	var verbose = flag.Bool("verbose", false, "Enable verbose logging")
+	var metrics = flag.String("metrics", "", "Where to write (@rcrowley go-metrics style) metrics to disk")
+	var format = flag.String("metrics-as", "json", "Format metrics as... ? Valid options are \"json\" and \"plain\"")
+	var verbose = flag.Bool("verbose", false, "Enable verbose logging, this will also spew all logging to STDOUT")
 
 	flag.Parse()
 	args := flag.Args()

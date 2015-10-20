@@ -17,9 +17,12 @@ _Adjust accordingly if you are using a shell other than Bash._
 ```
 go get -u "github.com/whosonfirst/go-whosonfirst-geojson"
 go get -u "github.com/whosonfirst/go-whosonfirst-utils"
+go get -u "github.com/whosonfirst/go-whosonfirst-csv"
+go get -u "github.com/whosonfirst/go-whosonfirst-logs"
 go get -u "github.com/kellydunn/golang-geo"
 go get -u "github.com/dhconnelly/rtreego"
 go get -u "github.com/hashicorp/golang-lru"
+go get -u "github.com/rcrowley/go-metrics"
 ```
 
 There is also a helpful `deps` target in the included Makefile to do this for you.
@@ -179,7 +182,30 @@ $> curl 'http://localhost:8080?latitude=40.677524&longitude=-73.987343&placetype
 ]
 ```
 
-You can enable strict placetype checking on the server-side by specifying the `-strict` flag. This will ensure that the placetype being specificed has actually been indexed, returning an error if not.
+You can enable strict placetype checking on the server-side by specifying the `-strict` flag. This will ensure that the placetype being specificed has actually been indexed, returning an error if not. `pip-server` has many other option-knobs and they are:
+
+```
+$> pip-server -h
+Usage of ./bin/pip-server:
+  -cache_size int
+    	      The number of WOF records with large geometries to cache (default 1024)
+  -cache_trigger int
+    		 The minimum number of coordinates in a WOF record that will trigger caching (default 5000)
+  -data string
+    	The data directory where WOF data lives, required
+  -logs string
+    	Where to write logs to disk
+  -metrics string
+    	   Where to write (@rcrowley go-metrics style) metrics to disk
+  -metrics-as string
+    	      Format metrics as... ? Valid options are "json" and "plain" (default "json")
+  -port int
+    	The port number to listen for requests on (default 8080)
+  -strict
+	Enable strict placetype checking
+  -verbose
+	Enable verbose logging, this will also spew all logging to STDOUT
+```
 
 ## Assumptions, caveats and known-knowns
 
