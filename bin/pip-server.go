@@ -22,8 +22,9 @@ func main() {
 	var strict = flag.Bool("strict", false, "Enable strict placetype checking")
 	var logs = flag.String("logs", "", "Where to write logs to disk")
 	var metrics = flag.String("metrics", "", "Where to write (@rcrowley go-metrics style) metrics to disk")
-	var format = flag.String("metrics-as", "json", "Format metrics as... ? Valid options are \"json\" and \"plain\"")
-	var verbose = flag.Bool("verbose", false, "Enable verbose logging, this will also spew all logging to STDOUT")
+	var format = flag.String("metrics-as", "plain", "Format metrics as... ? Valid options are \"json\" and \"plain\"")
+	var verbose = flag.Bool("verbose", false, "Enable verbose logging, or log level \"info\"")
+	var verboser = flag.Bool("verboser", false, "Enable really verbose logging, or log level \"debug\"")
 
 	flag.Parse()
 	args := flag.Args()
@@ -38,9 +39,13 @@ func main() {
 		panic("data does not exist")
 	}
 
-	loglevel := "info"
+	loglevel := "status"
 
 	if *verbose {
+		loglevel = "info"
+	}
+
+	if *verboser {
 		loglevel = "debug"
 	}
 
@@ -57,11 +62,7 @@ func main() {
 			panic(l_err)
 		}
 
-		if *verbose {
-			l_writer = io.MultiWriter(os.Stdout, l_file)
-		} else {
-			l_writer = io.MultiWriter(l_file)
-		}
+		l_writer = io.MultiWriter(os.Stdout, l_file)
 	}
 
 	logger := log.NewWOFLogger(l_writer, "[pip-server] ", loglevel)
@@ -92,10 +93,10 @@ func main() {
 
 	t2 := float64(time.Since(t1)) / 1e9
 
-	p.Logger.Info("indexed %d records in %.3f seconds \n", p.Rtree.Size(), t2)
+	p.Logger.Status("indexed %d records in %.3f seconds", p.Rtree.Size(), t2)
 
 	for pt, count := range p.Placetypes {
-		p.Logger.Info("indexed %s: %d\n", pt, count)
+		p.Logger.Status("indexed %s: %d", pt, count)
 	}
 
 	handler := func(rsp http.ResponseWriter, req *http.Request) {
