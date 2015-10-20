@@ -190,7 +190,7 @@ Usage of ./bin/pip-server:
   -cache_size int
     	      The number of WOF records with large geometries to cache (default 1024)
   -cache_trigger int
-    		 The minimum number of coordinates in a WOF record that will trigger caching (default 5000)
+    		 The minimum number of coordinates in a WOF record that will trigger caching (default 2000)
   -data string
     	The data directory where WOF data lives, required
   -logs string

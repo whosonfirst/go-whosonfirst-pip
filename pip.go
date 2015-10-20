@@ -162,13 +162,30 @@ func (p WOFPointInPolygon) IndexGeoJSONFile(path string) error {
 
 	p.Logger.Debug("index %s", path)
 
+	t := time.Now()
+
 	feature, parse_err := p.LoadGeoJSON(path)
+
+	d := time.Since(t)
 
 	if parse_err != nil {
 		return parse_err
 	}
 
-	return p.IndexGeoJSONFeature(feature)
+	index_err := p.IndexGeoJSONFeature(feature)
+
+	if index_err != nil {
+		return index_err
+	}
+
+	ttl := float64(d) / 1e9
+
+	if ttl > 0.01 {
+		p.Logger.Warning("scheduling %s for pre-caching because its time to load exceeds 0.01 seconds: %f", path, ttl)
+		go p.LoadPolygonsForFeature(feature)
+	}
+
+	return nil
 }
 
 func (p WOFPointInPolygon) IndexGeoJSONFeature(feature *geojson.WOFFeature) error {
@@ -192,7 +209,6 @@ func (p WOFPointInPolygon) IndexGeoJSONFeature(feature *geojson.WOFFeature) erro
 
 	p.Rtree.Insert(spatial)
 
-	go p.LoadPolygonsForFeature(feature)
 	return nil
 }
 
@@ -420,12 +436,6 @@ func (p WOFPointInPolygon) LoadGeoJSON(path string) (*geojson.WOFFeature, error)
 	feature, err := geojson.UnmarshalFile(path)
 
 	d := time.Since(t)
-
-	ttl := float64(d) / 1e9
-
-	if ttl > 0.1 {
-		p.Logger.Warning("time to load %s exceeds 0.1 seconds: %f", path, ttl)
-	}
 
 	var tm metrics.Timer
 	tm = *p.Metrics.TimeToUnmarshal

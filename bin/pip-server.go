@@ -18,7 +18,7 @@ func main() {
 	var port = flag.Int("port", 8080, "The port number to listen for requests on")
 	var data = flag.String("data", "", "The data directory where WOF data lives, required")
 	var cache_size = flag.Int("cache_size", 1024, "The number of WOF records with large geometries to cache")
-	var cache_trigger = flag.Int("cache_trigger", 5000, "The minimum number of coordinates in a WOF record that will trigger caching")
+	var cache_trigger = flag.Int("cache_trigger", 2000, "The minimum number of coordinates in a WOF record that will trigger caching")
 	var strict = flag.Bool("strict", false, "Enable strict placetype checking")
 	var logs = flag.String("logs", "", "Where to write logs to disk")
 	var metrics = flag.String("metrics", "", "Where to write (@rcrowley go-metrics style) metrics to disk")
