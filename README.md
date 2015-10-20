@@ -201,7 +201,62 @@ Usage of ./bin/pip-server:
 
 ## Metrics
 
-_Please write me. See also: https://github.com/rcrowley/go-metrics_
+This package uses Richard Crowley's [go-metrics](https://github.com/rcrowley/go-metrics) package to record general [memory statistics](https://golang.org/pkg/runtime/#MemStats) and a handful of [custom metrics](https://github.com/whosonfirst/go-whosonfirst-pip/blob/master/pip.go#L20-L32).
+
+### Custom metrics
+
+#### pip.reversegeo.lookups
+
+The total number of reverse geocoding lookups. This is a `metrics.Counter`.
+
+#### pip.geojson.unmarshaled
+
+The total number of time any GeoJSON file has been unmarshaled. This is a `metrics.Counter` thingy.
+
+#### pip.cache.hit
+
+The number of times a record has been found in the LRU cache. This is a `metrics.Counter` thingy.
+
+#### pip.cache.miss
+
+The number of times a record has _not_ been found in the LRU cache. This is a `metrics.Counter` thingy.
+
+#### pip.cache.set
+
+The number of times a record has been added to the LRU cache. This is a `metrics.Counter` thingy.
+
+#### pip.timer.reversegeo
+
+The total amount of time to complete a reverse geocoding lookup. This is a `metrics.Timer` thingy.
+
+#### pip.timer.unmarshal
+
+The total amount of time to read and unmarshal a GeoJSON file from disk. This is a `metrics.Timer` thingy.
+
+#### pip.timer.containment
+
+The total amount of time to perform final raycasting intersection tests. This is a `metrics.Timer` thingy.
+
+### Configuring metrics
+
+If you are using the `pip` package in your own program you will need to tell the package where to send the metrics. You can do this by passing the following to the `SendMetricsTo` method:
+
+* Anything that implements an `io.Writer` interface
+* The frequency that metrics should be reported as represented by something that implements the `time.Duration` interface
+* Either `plain` or `json` which map to the [metrics.Log](https://github.com/rcrowley/go-metrics/blob/master/log.go) and [metrics.JSON](https://github.com/rcrowley/go-metrics/blob/master/json.go) packages respectively
+
+For example:
+
+```
+m_file, m_err := os.OpenFile("metrics.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0660)
+
+if m_err != nil {
+	panic(m_err)
+}
+
+m_writer = io.MultiWriter(m_file)
+ = p.SendMetricsTo(m_writer, 60e9, "plain")
+```
 
 ## Assumptions, caveats and known-knowns
 
