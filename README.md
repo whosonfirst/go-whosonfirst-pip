@@ -59,7 +59,7 @@ import (
 )
 
 source := "/usr/local/mapzen/whosonfirst-data"
-p := pip.NewPointInPolygon(source)
+p := pip.NewPointInPolygonSimple(source)
 
 geojson_file := "/usr/local/mapzen/whosonfirst-data/data/101/736/545/101736545.geojson"
 p.IndexGeoJSONFile(geojson_file)

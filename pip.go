@@ -10,6 +10,7 @@ import (
 	log "github.com/whosonfirst/go-whosonfirst-log"
 	utils "github.com/whosonfirst/go-whosonfirst-utils"
 	"io"
+	golog "log"
 	"os"
 	"path"
 	"time"
@@ -45,16 +46,16 @@ func NewPointInPolygonMetrics() *WOFPointInPolygonMetrics {
 	tm_contain := metrics.NewTimer()
 	tm_process := metrics.NewTimer()
 
-	registry.Register("lookups", cnt_lookups)
-	registry.Register("unmarshaled", cnt_unmarshal)
-	registry.Register("cache-hit", cnt_cache_hit)
-	registry.Register("cache-miss", cnt_cache_miss)
-	registry.Register("cache-set", cnt_cache_set)
-	registry.Register("time-to-process", tm_process)
-	registry.Register("time-to-unmarshal", tm_unmarshal)
+	registry.Register("pip.reversegeo.lookups", cnt_lookups)
+	registry.Register("pip.geojson.unmarshaled", cnt_unmarshal)
+	registry.Register("pip.cache.hit", cnt_cache_hit)
+	registry.Register("pip.cache.miss", cnt_cache_miss)
+	registry.Register("pip.cache.set", cnt_cache_set)
+	registry.Register("pip.timer.reversegeo", tm_process)
+	registry.Register("pip.timer.unmarshal", tm_unmarshal)
 	// registry.Register("time-to-intersect", tm_intersect)
 	// registry.Register("time-to-inflate", tm_inflate)
-	registry.Register("time-to-contain", tm_contain)
+	registry.Register("pip.timer.containment", tm_contain)
 
 	m := WOFPointInPolygonMetrics{
 		Registry:        &registry,
@@ -91,24 +92,27 @@ func NewWOFPointInPolygonTiming(event string, d time.Duration) *WOFPointInPolygo
 }
 
 type WOFPointInPolygon struct {
-	Rtree      *rtreego.Rtree
-	Cache      *lru.Cache
-	CacheSize  int
-	Source     string
-	Placetypes map[string]int
-	Metrics    *WOFPointInPolygonMetrics
-	Logger     *log.WOFLogger
+	Rtree        *rtreego.Rtree
+	Cache        *lru.Cache
+	CacheSize    int
+	CacheTrigger int
+	Source       string
+	Placetypes   map[string]int
+	Metrics      *WOFPointInPolygonMetrics
+	Logger       *log.WOFLogger
 }
 
 func NewPointInPolygonSimple(source string) (*WOFPointInPolygon, error) {
 
 	cache_size := 100
+	cache_trigger := 1000
+
 	logger := log.NewWOFLogger(os.Stdout, "[pip-server]", "debug")
 
-	return NewPointInPolygon(source, cache_size, logger)
+	return NewPointInPolygon(source, cache_size, cache_trigger, logger)
 }
 
-func NewPointInPolygon(source string, cache_size int, logger *log.WOFLogger) (*WOFPointInPolygon, error) {
+func NewPointInPolygon(source string, cache_size int, cache_trigger int, logger *log.WOFLogger) (*WOFPointInPolygon, error) {
 
 	rtree := rtreego.NewTree(2, 25, 50)
 
@@ -123,24 +127,35 @@ func NewPointInPolygon(source string, cache_size int, logger *log.WOFLogger) (*W
 	placetypes := make(map[string]int)
 
 	pip := WOFPointInPolygon{
-		Rtree:      rtree,
-		Source:     source,
-		Cache:      cache,
-		CacheSize:  cache_size,
-		Placetypes: placetypes,
-		Metrics:    metrics,
-		Logger:     logger,
+		Rtree:        rtree,
+		Source:       source,
+		Cache:        cache,
+		CacheSize:    cache_size,
+		CacheTrigger: cache_trigger,
+		Placetypes:   placetypes,
+		Metrics:      metrics,
+		Logger:       logger,
 	}
 
 	return &pip, nil
 }
 
-func (p WOFPointInPolygon) SendMetricsTo(w io.Writer, d time.Duration) {
+func (p WOFPointInPolygon) SendMetricsTo(w io.Writer, d time.Duration, format string) bool {
 
 	var r metrics.Registry
 	r = *p.Metrics.Registry
 
-	go metrics.WriteJSON(r, d, w)
+	if format == "log" {
+		l := golog.New(w, "[pip-metrics] ", golog.Lmicroseconds)
+		go metrics.Log(r, d, l)
+		return true
+	} else if format == "json" {
+		go metrics.WriteJSON(r, d, w)
+		return true
+	} else {
+		p.Logger.Warning("unable to send metrics anywhere, because what is '%s'", format)
+		return false
+	}
 }
 
 func (p WOFPointInPolygon) IndexGeoJSONFile(path string) error {
@@ -464,7 +479,7 @@ func (p WOFPointInPolygon) LoadPolygonsForFeature(feature *geojson.WOFFeature) (
 		points += len(p.Points())
 	}
 
-	if points >= 1000 {
+	if points >= p.CacheTrigger {
 
 		id := feature.WOFId()
 

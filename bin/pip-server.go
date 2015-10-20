@@ -3,9 +3,9 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"github.com/whosonfirst/go-whosonfirst-geojson"
+	"fmt"
 	log "github.com/whosonfirst/go-whosonfirst-log"
-	"github.com/whosonfirst/go-whosonfirst-pip"
+	pip "github.com/whosonfirst/go-whosonfirst-pip"
 	"io"
 	"net/http"
 	"os"
@@ -15,11 +15,14 @@ import (
 
 func main() {
 
+	var port = flag.Int("port", 8080, "The port number to listen for requests on")
 	var data = flag.String("data", "", "The data directory where WOF data lives")
-	var cache_size = flag.Int("cache_size", 1024, "The number of WOF records with large geometries to cache (default is 1024)")
+	var cache_size = flag.Int("cache_size", 1024, "The number of WOF records with large geometries to cache")
+	var cache_trigger = flag.Int("cache_trigger", 5000, "The minimum number of coordinates in a WOF record that will trigger caching")
 	var strict = flag.Bool("strict", false, "Enable strict placetype checking")
 	var logs = flag.String("logs", "", "Where to write logs to disk")
 	var metrics = flag.String("metrics", "", "Where to write metrics to disk")
+	var format = flag.String("format", "json", "Format metrics as... ? (default is JSON)")
 	var verbose = flag.Bool("verbose", false, "Enable verbose logging")
 
 	flag.Parse()
@@ -63,7 +66,7 @@ func main() {
 
 	logger := log.NewWOFLogger(l_writer, "[pip-server] ", loglevel)
 
-	p, p_err := pip.NewPointInPolygon(*data, *cache_size, logger)
+	p, p_err := pip.NewPointInPolygon(*data, *cache_size, *cache_trigger, logger)
 
 	if p_err != nil {
 		panic(p_err)
@@ -78,7 +81,7 @@ func main() {
 		}
 
 		m_writer = io.MultiWriter(m_file)
-		p.SendMetricsTo(m_writer, 60e9)
+		_ = p.SendMetricsTo(m_writer, 60e9, *format)
 	}
 
 	t1 := time.Now()
@@ -136,8 +139,6 @@ func main() {
 			return
 		}
 
-		results := make([]*geojson.WOFSpatial, 0)
-
 		if placetype != "" {
 
 			if *strict && !p.IsKnownPlacetype(placetype) {
@@ -146,17 +147,20 @@ func main() {
 			}
 		}
 
-		results, _ = p.GetByLatLonForPlacetype(lat, lon, placetype)
+		results, timings := p.GetByLatLonForPlacetype(lat, lon, placetype)
 
-		/*
-			count := len(results)
+		count := len(results)
+		ttp := 0.0
 
-			fmt.Printf("[timings] %f, %f (%d results)\n", lat, lon, count)
+		for _, t := range timings {
+			ttp += t.Duration
+		}
 
-			for _, t := range timings {
-				fmt.Printf("[timing] %s: %f\n", t.Event, t.Duration)
-			}
-		*/
+		if placetype != "" {
+			p.Logger.Info("time to reverse geocode %f, %f @%s: %d results in %f seconds ", lat, lon, placetype, count, ttp)
+		} else {
+			p.Logger.Info("time to reverse geocode %f, %f: %d results in %f seconds ", lat, lon, count, ttp)
+		}
 
 		js, err := json.Marshal(results)
 
@@ -169,6 +173,8 @@ func main() {
 		rsp.Write(js)
 	}
 
+	str_port := fmt.Sprintf(":%d", *port)
+
 	http.HandleFunc("/", handler)
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(str_port, nil)
 }
