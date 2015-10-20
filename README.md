@@ -275,43 +275,19 @@ This is how it works now:
 
 ### Caching
 
-This is what it looks like reverse-geocoding a point on the island of Montéal against the set of all countries in Who's On First:
+We are aggressively pre-caching large (or slow) GeoJSON files or GeoJSON files with large geometries in the LRU cache. As of this writing during the start-up process when we are building the Rtree any GeoJSON file that takes > 0.01 seconds to load is tested to see whether it has >= 2000 vertices. If it does then it is added to the LRU cache.
+
+Both the size of the cache and the trigger (number of vertices) are required parameters when instatiating a `WOFPointInPolygon` object-interface-struct thing. Like this:
 
 ```
-[debug] time to marshal /usr/local/mapzen/whosonfirst-data/data/856/330/41/85633041.geojson is 0.072996
-[debug] time to convert geom to polygons (67631 points) is 0.007654
-[cache] 85633041 because so many points (67631)
-[debug] time to load polygons is 0.080718
-[debug] time to check containment (true) after 10/382 possible iterations is 0.000007
-[debug] time to marshal /usr/local/mapzen/whosonfirst-data/data/856/326/85/85632685.geojson is 0.957890
-[debug] time to convert geom to polygons (469372 points) is 0.135788
-[cache] 85632685 because so many points (469372)
-[debug] time to load polygons is 1.093759
-[debug] time to check containment (false) after 4800/4800 possible iterations is 0.005420
-[debug] time to load polygons is 0.000003
-[debug] time to check containment (false) after 75/75 possible iterations is 0.001028
-[debug] contained: 1/3
-[timings] 45.572744, -73.586295 (1 result)
-[timing] intersects: 0.000030
-[timing] inflate: 0.000001
-[timing] contained: 1.181019
-
-# this time loading polygons from cache
-
-[debug] time to load polygons is 0.000003
-[debug] time to check containment (true) after 10/382 possible iterations is 0.000006
-[debug] time to load polygons is 0.000001
-[debug] time to check containment (false) after 4800/4800 possible iterations is 0.005379
-[debug] time to load polygons is 0.000001
-[debug] time to check containment (false) after 75/75 possible iterations is 0.001023
-[debug] contained: 1/3
-[timings] 45.572744, -73.586295 (1 result)
-[timing] intersects: 0.000025
-[timing] inflate: 0.000001
-[timing] contained: 0.006456
+func NewPointInPolygon(source string, cache_size int, cache_trigger int, logger *log.WOFLogger) (*WOFPointInPolygon, error) {
+     // ...
+}
 ```
 
-Some countries, like [New Zealand](https://whosonfirst.mapzen.com/spelunker/id/85633345/) are known to be problematic because they have an insanely large "ground truth" polygon, but the caching definitely helps. For example, reverse-geocoding `-40.357418,175.611481` looks like this:
+You should adjust these values to taste. If you are adding more records to the cache than you've allocated space for the package will emit warnings telling you that, during the start-up phase.
+
+This is all to account for the fact that some countries, like [New Zealand](https://whosonfirst.mapzen.com/spelunker/id/85633345/) are known to be problematic because they have an insanely large "ground truth" polygon, but the caching definitely helps. For example, reverse-geocoding `-40.357418,175.611481` looks like this:
 
 ```
 [debug] time to marshal /usr/local/mapzen/whosonfirst-data/data/856/333/45/85633345.geojson is 5.419391
@@ -325,9 +301,11 @@ Some countries, like [New Zealand](https://whosonfirst.mapzen.com/spelunker/id/8
 [timing] inflate: 0.000004
 [timing] placetype: 0.000001
 [timing] contained: 5.766121
+```
 
-# this time loading polygons from cache
+This is what things look like loading the same data from cache:
 
+```
 [debug] time to load polygons is 0.000003
 [debug] time to check containment (true) after 1524/5825 possible iterations is 0.020891
 [debug] contained: 1/1
@@ -342,9 +320,9 @@ So the amount of time it takes to perform the final point-in-polygon test is rel
 
 There is a separate on-going process for [sorting out geometries in Who's On First](https://github.com/whosonfirst/whosonfirst-geometries) but on-going work is on-going. Whatever the case there is room for making this "Moar Faster".
 
-### Memory usage
+### Load testing
 
-It is still possible, with enough concurrent requests all loading the countries files, to gobble up all the memory and fail unceremoniously. On the other hand, if you take countries and their monster geometries out of the mix everything seems fine:
+Individual reverse geocoding lookups are almost always sub-second responses. After unmarshaling GeoJSON files (which are cached) the bottleneck appears to be in the final raycasting intersection tests for anything that is a match in the Rtree and warnings are emitted for anything that takes longer than 0.4 seconds. Although there is room for improvement here (asynchronous processing of candidates, a more efficient raycasting, etc. ) this is mostly only a problem for countries and very large and fiddly cities as evidenced by our load-testing benchmarks.
 
 ```
 $> siege -c 100 -i -f urls.txt
@@ -353,23 +331,95 @@ $> siege -c 100 -i -f urls.txt
 The server is now under siege...^C
 Lifting the server siege...      done.
 
-Transactions:			17939 hits
-Availability:			100.00 %
-Elapsed time:			91.00 secs
-Data transferred:		0.59 MB
-Response time:			0.00 secs
-Transaction rate:		197.13 trans/sec
-Throughput:			0.01 MB/sec
-Concurrency:			0.27
-Successful transactions:	17939
-Failed transactions:		0
-Longest transaction:		0.11
-Shortest transaction:		0.00
+Transactions:				57270 hits
+Availability:				100.00 %
+Elapsed time:				314.56 secs
+Data transferred:			3.18 MB
+Response time:				0.05 secs
+Transaction rate:			182.06 trans/sec
+Throughput:				0.01 MB/sec
+Concurrency:				8.68
+Successful transactions:		57270
+Failed transactions:			0
+Longest transaction:			1.70
+Shortest transaction:			0.00
+
+--
+
+$> siege -c 500 -i -f urls.txt
+** SIEGE 3.0.5
+** Preparing 500 concurrent users for battle.
+The server is now under siege...^C
+Lifting the server siege...      done.
+
+Transactions:				118034 hits
+Availability:				99.98 %
+Elapsed time:				475.11 secs
+Data transferred:			6.56 MB
+Response time:				1.47 secs
+Transaction rate:			248.44 trans/sec
+Throughput:				0.01 MB/sec
+Concurrency:				365.65
+Successful transactions:		118034
+Failed transactions:			20
+Longest transaction:			65.09
+Shortest transaction:			0.03
+
+
+$> siege -c 250 -i -f urls.txt
+** SIEGE 3.0.5
+** Preparing 250 concurrent users for battle.
+The server is now under siege...^C
+Lifting the server siege...      done.
+
+Transactions:				96861 hits
+Availability:				100.00 %
+Elapsed time:				390.72 secs
+Data transferred:			5.38 MB
+Response time:				0.51 secs
+Transaction rate:			247.90 trans/sec
+Throughput:				0.01 MB/sec
+Concurrency:				125.76
+Successful transactions:		96861
+Failed transactions:			0
+Longest transaction:			4.07
+Shortest transaction:			0.01
+
+$> siege -c 300 -i -f urls-wk.txt 
+siege aborted due to excessive socket failure; you
+can change the failure threshold in $HOME/.siegerc
+
+Transactions:				897266 hits
+Availability:				99.85 %
+Elapsed time:				3760.40 secs
+Data transferred:			43.62 MB
+Response time:				0.67 secs
+Transaction rate:			238.61 trans/sec
+Throughput:				0.01 MB/sec
+Concurrency:				160.68
+Successful transactions:		896961
+Failed transactions:			1323
+Longest transaction:			31.51
+Shortest transaction:			0.01
 ```
 
-_The point of the above is that memory usage was low and constant._
+### Memory usage
 
-But yeah. Something is going on with countries. And we should fix that...
+Memory usage will depend on the data that you've imported, obviously. In the past (before we cached things so aggressively) it was possible to send the `pip-server` in to an ungracious death spiral by hitting the server with too many concurrent requests that required it to load large country GeoJSON files.
+
+Pre-caching files seems to account for this problem (see load testing stats above) but as with any service I'm sure there is still a way to overwhelm it. The good news is that in the testing we've done so far memory usage for the `pip-server` remains pretty constant regardless of the number of connections attempting to talk to it.
+
+For a server loading all of the [countries](https://github.com/whosonfirst/whosonfirst-data/blob/master/meta/wof-country-latest.csv), [localities](https://github.com/whosonfirst/whosonfirst-data/blob/master/meta/wof-locality-latest.csv) and [neightbourhoods](https://github.com/whosonfirst/whosonfirst-data/blob/master/meta/wof-neighbourhood-latest.csv) in Who's On First these are the sort of numbers (measured in bytes) we're seeing as reported by the metrics package:
+
+```
+$> /bin/grep -A 1 runtime.MemStats.Alloc metrics.log
+[pip-metrics] 23:39:13.978103 gauge runtime.MemStats.Alloc
+[pip-metrics] 23:39:13.978107   value:       876122856
+
+$> /bin/grep -A 1 runtime.MemStats.HeapInuse metrics.log
+[pip-metrics] 23:39:13.977245 gauge runtime.MemStats.HeapInuse
+[pip-metrics] 23:39:13.977249   value:       1273307136
+```
 
 ### Using this with other data sources
 
@@ -400,5 +450,6 @@ First, these should not be confused with malformed GeoJSON files. Some records i
 * https://www.github.com/dhconnelly/rtreego
 * https://www.github.com/kellydunn/golang-geo
 * https://github.com/hashicorp/golang-lru
+* https://github.com/rcrowley/go-metrics
 * https://www.github.com/whosonfirst/go-whosonfirst-geojson
 * https://whosonfirst.mapzen.com/data/
