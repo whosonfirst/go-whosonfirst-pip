@@ -100,13 +100,13 @@ for _, t := range timings {
 ### What's going on under the hood
 
 ```
-results := p.GetIntersectsByLatLon(lat, lon)
+results, _ := p.GetIntersectsByLatLon(lat, lon)
 
 for i, r := range results {
 	fmt.Printf("spatial result #%d is %v\n", i, r)
 }
 
-inflated := p.InflateSpatialResults(results)
+inflated, _ := p.InflateSpatialResults(results)
 
 for i, wof := range inflated {
 	fmt.Printf("wof result #%d is %s\n", i, wof.Name)
@@ -114,13 +114,13 @@ for i, wof := range inflated {
 
 # Assuming you're filtering on placetype
 
-filtered := p.FilterByPlacetype(inflated, "locality")
+filtered, _ := p.FilterByPlacetype(inflated, "locality")
 
 for i, f := range filtered {
 	fmt.Printf("filtered result #%d is %s\n", i, f.Name)
 }
 
-contained := p.EnsureContained(lat, lon, inflated)
+contained, _ := p.EnsureContained(lat, lon, inflated)
 
 for i, f := range contained {
 	fmt.Printf("contained result #%d is %s\n", i, f.Name)
