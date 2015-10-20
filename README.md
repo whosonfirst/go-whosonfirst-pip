@@ -207,6 +207,10 @@ Usage of ./bin/pip-server:
 	Enable verbose logging, this will also spew all logging to STDOUT
 ```
 
+## Metrics
+
+_Please write me. See also: https://github.com/rcrowley/go-metrics_
+
 ## Assumptions, caveats and known-knowns
 
 ### When we say `geojson` in the context of Go-typing
