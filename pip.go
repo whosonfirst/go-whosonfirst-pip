@@ -1,7 +1,7 @@
 package pip
 
 import (
-	"fmt"
+	_ "fmt"
 	rtreego "github.com/dhconnelly/rtreego"
 	lru "github.com/hashicorp/golang-lru"
 	geo "github.com/kellydunn/golang-geo"
@@ -400,32 +400,40 @@ func (p WOFPointInPolygon) FilterByPlacetype(results []*geojson.WOFSpatial, plac
 
 func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*geojson.WOFSpatial) ([]*geojson.WOFSpatial, time.Duration) {
 
-	t := time.Now()
+	// Okay - this isn't super complicated but it might look a bit scary
+	// We're using a WaitGroup to process each possible result *and* we
+	// are using (n) sub WaitGroups to process every polygon for each result
+	// separately (20151020/thisisaaronland)
 
-	count_possible := len(results)
+	// See also: https://talks.golang.org/2012/concurrency.slide#46
+	// This is not what we're doing but it's essentially what the WaitGroups
+	// implement but with a different syntax/pattern
+
+	wg := new(sync.WaitGroup)
+	wg.Add(len(results))
 
 	pt := geo.NewPoint(lat, lon)
 
-	wg := new(sync.WaitGroup)
-	wg.Add(count_possible)
-
 	contained := make([]*geojson.WOFSpatial, 0)
-	timings := make([]*WOFPointInPolygonTiming, 0)
+	// timings := make([]*WOFPointInPolygonTiming, 0)
 
-	for i, wof := range results {
+	t := time.Now()
 
-		ensure := func(wof *geojson.WOFSpatial) {
+	for _, wof := range results {
+
+		wg_ensure := func(wof *geojson.WOFSpatial) {
 
 			defer wg.Done()
 
-			t1 := time.Now()
+			// id := wof.Id
+			// t1 := time.Now()
 
 			polygons, err := p.LoadPolygons(wof)
 
-			d1 := time.Since(t1)
+			// d1 := time.Since(t1)
 
-			load_event := fmt.Sprintf("load_%d", i)
-			timings = append(timings, NewWOFPointInPolygonTiming(load_event, d1))
+			// load_event := fmt.Sprintf("load_%d", id)
+			// timings = append(timings, NewWOFPointInPolygonTiming(load_event, d1))
 
 			if err != nil {
 				p.Logger.Error("failed to load polygons for %d, because %v", wof.Id, err)
@@ -434,39 +442,58 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 
 			is_contained := false
 
-			count := len(polygons)
-			points := 0
-			iters := 0
+			// count := len(polygons)
+			// points := 0
+			// iters := 0
 
-			t2 := time.Now()
+			// t2 := time.Now()
+
+			// Now we check each polygon concurrently
+
+			wg2 := new(sync.WaitGroup)
+			wg2.Add(len(polygons))
 
 			for _, poly := range polygons {
 
-				points += len(poly.Points())
-				iters += 1
+				wg_contains := func(poly *geo.Polygon) {
 
-				if poly.Contains(pt) {
-					p.Logger.Debug("point is contained after checking %d/%d polygons", iters, count)
-					is_contained = true
-					break
+					defer wg2.Done()
+
+					if is_contained {
+						return
+					}
+
+					// points += len(poly.Points())
+					// iters += 1
+
+					if poly.Contains(pt) {
+						// p.Logger.Status("point for %d is contained after checking %d/%d polygons", wof.Id, iters, count)
+						is_contained = true
+					}
 				}
 
+				go wg_contains(poly)
 			}
 
-			d2 := time.Since(t2)
+			wg2.Wait()
 
-			contain_event := fmt.Sprintf("contain_%d (%d/%d iterations, %d points)", i, iters, count, points)
-			timings = append(timings, NewWOFPointInPolygonTiming(contain_event, d2))
+			// All done checking the polygons - are we contained?
+
+			// d2 := time.Since(t2)
+			// contain_event := fmt.Sprintf("contain %d (%d/%d iterations, %d points)", id, iters, count, points)
+			// timings = append(timings, NewWOFPointInPolygonTiming(contain_event, d2))
 
 			if is_contained {
 				contained = append(contained, wof)
 			}
 		}
 
-		go ensure(wof)
+		go wg_ensure(wof)
 	}
 
 	wg.Wait()
+
+	// All done checking the results
 
 	d := time.Since(t)
 
@@ -474,20 +501,10 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 	tm = *p.Metrics.TimeToContain
 	tm.Update(d)
 
-	count_in := len(results)
-	count_out := len(contained)
-
-	p.Logger.Debug("contained: %d/%d\n", count_out, count_in)
-
 	ttc := float64(d) / 1e9
 
 	if ttc > 0.4 {
-
 		p.Logger.Warning("time to contains exceeds threshold of 0.4 seconds: %f", ttc)
-
-		for _, t := range timings {
-			p.Logger.Info("[%s] %f", t.Event, t.Duration)
-		}
 	}
 
 	return contained, d
