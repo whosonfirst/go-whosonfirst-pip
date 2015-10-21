@@ -402,32 +402,21 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 
 	t := time.Now()
 
-	contained := make([]*geojson.WOFSpatial, 0)
+	count_possible := len(results)
 
 	pt := geo.NewPoint(lat, lon)
 
-	timings := make([]*WOFPointInPolygonTiming, 0)
-
 	wg := new(sync.WaitGroup)
+	wg.Add(count_possible)
+
+	contained := make([]*geojson.WOFSpatial, 0)
+	timings := make([]*WOFPointInPolygonTiming, 0)
 
 	for i, wof := range results {
 
-		wg.Add(1)
-
-		// sudo OMG put me in a proper function/method yeah
-		// do NOT leave this as an anonymous function any
-		// longer than necessary... (20151020/thisisaaronland)
-
-		// also this will not work without channels because
-		// goroutines... okay, then - if you are reading this
-		// then what follows IS BROKEN and you will be sad if
-		// you try to use it... (20151020/thisisaaronland)
-
-		go func() {
+		ensure := func(wof *geojson.WOFSpatial) {
 
 			defer wg.Done()
-
-			p.Logger.Status("WUB WUB WUB")
 
 			t1 := time.Now()
 
@@ -472,8 +461,9 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 			if is_contained {
 				contained = append(contained, wof)
 			}
+		}
 
-		}()
+		go ensure(wof)
 	}
 
 	wg.Wait()
