@@ -14,6 +14,7 @@ import (
 	golog "log"
 	"os"
 	"path"
+	"sync"
 	"time"
 )
 
@@ -407,55 +408,75 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 
 	timings := make([]*WOFPointInPolygonTiming, 0)
 
-	// please do this with a waitgroup or something
+	wg := new(sync.WaitGroup)
 
 	for i, wof := range results {
 
-		t1 := time.Now()
+		wg.Add(1)
 
-		polygons, err := p.LoadPolygons(wof)
+		// sudo OMG put me in a proper function/method yeah
+		// do NOT leave this as an anonymous function any
+		// longer than necessary... (20151020/thisisaaronland)
 
-		d1 := time.Since(t1)
+		// also this will not work without channels because
+		// goroutines... okay, then - if you are reading this
+		// then what follows IS BROKEN and you will be sad if
+		// you try to use it... (20151020/thisisaaronland)
 
-		load_event := fmt.Sprintf("load_%d", i)
-		timings = append(timings, NewWOFPointInPolygonTiming(load_event, d1))
+		go func() {
 
-		if err != nil {
-			// please log me
-			continue
-		}
+			defer wg.Done()
 
-		is_contained := false
+			p.Logger.Status("WUB WUB WUB")
 
-		count := len(polygons)
-		points := 0
-		iters := 0
+			t1 := time.Now()
 
-		t2 := time.Now()
+			polygons, err := p.LoadPolygons(wof)
 
-		for _, poly := range polygons {
+			d1 := time.Since(t1)
 
-			points += len(poly.Points())
-			iters += 1
+			load_event := fmt.Sprintf("load_%d", i)
+			timings = append(timings, NewWOFPointInPolygonTiming(load_event, d1))
 
-			if poly.Contains(pt) {
-				p.Logger.Debug("point is contained after checking %d/%d polygons", iters, count)
-				is_contained = true
-				break
+			if err != nil {
+				p.Logger.Error("failed to load polygons for %d, because %v", wof.Id, err)
+				return
 			}
 
-		}
+			is_contained := false
 
-		d2 := time.Since(t2)
+			count := len(polygons)
+			points := 0
+			iters := 0
 
-		contain_event := fmt.Sprintf("contain_%d (%d/%d iterations, %d points)", i, iters, count, points)
-		timings = append(timings, NewWOFPointInPolygonTiming(contain_event, d2))
+			t2 := time.Now()
 
-		if is_contained {
-			contained = append(contained, wof)
-		}
+			for _, poly := range polygons {
 
+				points += len(poly.Points())
+				iters += 1
+
+				if poly.Contains(pt) {
+					p.Logger.Debug("point is contained after checking %d/%d polygons", iters, count)
+					is_contained = true
+					break
+				}
+
+			}
+
+			d2 := time.Since(t2)
+
+			contain_event := fmt.Sprintf("contain_%d (%d/%d iterations, %d points)", i, iters, count, points)
+			timings = append(timings, NewWOFPointInPolygonTiming(contain_event, d2))
+
+			if is_contained {
+				contained = append(contained, wof)
+			}
+
+		}()
 	}
+
+	wg.Wait()
 
 	d := time.Since(t)
 
