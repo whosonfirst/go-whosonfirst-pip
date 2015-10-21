@@ -245,7 +245,7 @@ If you are using the `pip` package in your own program you will need to tell the
 * The frequency that metrics should be reported as represented by something that implements the `time.Duration` interface
 * Either `plain` or `json` which map to the [metrics.Log](https://github.com/rcrowley/go-metrics/blob/master/log.go) and [metrics.JSON](https://github.com/rcrowley/go-metrics/blob/master/json.go) packages respectively
 
-For example:
+#### Example
 
 ```
 m_file, m_err := os.OpenFile("metrics.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0660)
@@ -255,7 +255,7 @@ if m_err != nil {
 }
 
 m_writer = io.MultiWriter(m_file)
- = p.SendMetricsTo(m_writer, 60e9, "plain")
+_ = p.SendMetricsTo(m_writer, 60e9, "plain")
 ```
 
 ## Assumptions, caveats and known-knowns
@@ -344,8 +344,6 @@ Failed transactions:			0
 Longest transaction:			1.70
 Shortest transaction:			0.00
 
---
-
 $> siege -c 500 -i -f urls.txt
 ** SIEGE 3.0.5
 ** Preparing 500 concurrent users for battle.
@@ -364,7 +362,6 @@ Successful transactions:		118034
 Failed transactions:			20
 Longest transaction:			65.09
 Shortest transaction:			0.03
-
 
 $> siege -c 250 -i -f urls.txt
 ** SIEGE 3.0.5
