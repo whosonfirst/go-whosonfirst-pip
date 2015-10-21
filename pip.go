@@ -242,6 +242,9 @@ func (p WOFPointInPolygon) IndexMetaFile(csv_file string) error {
 		return reader_err
 	}
 
+	// It is tempting to think that we could fan this out and process each row/file
+	// concurrently but that will make the Rtree sad... (20151020/thisisaaronland)
+
 	for {
 		row, err := reader.Read()
 
@@ -294,7 +297,7 @@ func (p WOFPointInPolygon) GetIntersectsByLatLon(lat float64, lon float64) ([]rt
 
 	var tm metrics.Timer
 	tm = *p.Metrics.TimeToIntersect
-	tm.Update(d)
+	go tm.Update(d)
 
 	return results, d
 }
@@ -319,7 +322,7 @@ func (p WOFPointInPolygon) InflateSpatialResults(results []rtreego.Spatial) ([]*
 
 	var tm metrics.Timer
 	tm = *p.Metrics.TimeToInflate
-	tm.Update(d)
+	go tm.Update(d)
 
 	return inflated, d
 }
@@ -334,7 +337,7 @@ func (p WOFPointInPolygon) GetByLatLonForPlacetype(lat float64, lon float64, pla
 
 	var c metrics.Counter
 	c = *p.Metrics.CountLookups
-	c.Inc(1)
+	go c.Inc(1)
 
 	t := time.Now()
 
@@ -366,7 +369,7 @@ func (p WOFPointInPolygon) GetByLatLonForPlacetype(lat float64, lon float64, pla
 
 	var tm metrics.Timer
 	tm = *p.Metrics.TimeToProcess
-	tm.Update(d)
+	go tm.Update(d)
 
 	ttp := float64(d) / 1e9
 
@@ -448,7 +451,9 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 
 			// t2 := time.Now()
 
-			// Now we check each polygon concurrently
+			// Now we check each polygon concurrently - is this a good
+			// idea for things like countries with lots of polygons?
+			// maybe not... (20151020/thisisaaronland)
 
 			wg2 := new(sync.WaitGroup)
 			wg2.Add(len(polygons))
@@ -499,13 +504,22 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 
 	var tm metrics.Timer
 	tm = *p.Metrics.TimeToContain
-	tm.Update(d)
+	go tm.Update(d)
 
-	ttc := float64(d) / 1e9
+	// there is a weird thing happening here that I don't entirely understand
+	// It *looks* like some part of the for loops or the waitgroup scaffolding
+	// is adding 0.1 to 0.3 seconds to the total processing time which sounds
+	// insane, I know. All I can say is that the sum of all the timings above
+	// for each result always seem to be less than 'ttc' below. So confused...
+	// (20151020/thisisaaronland)
 
-	if ttc > 0.4 {
-		p.Logger.Warning("time to contains exceeds threshold of 0.4 seconds: %f", ttc)
-	}
+	/*
+		ttc := float64(d) / 1e9
+
+		if ttc > 0.4 {
+			p.Logger.Warning("time to contains exceeds threshold of 0.4 seconds: %f", ttc)
+		}
+	*/
 
 	return contained, d
 }
@@ -521,7 +535,7 @@ func (p WOFPointInPolygon) LoadGeoJSON(path string) (*geojson.WOFFeature, error)
 	var tm metrics.Timer
 	tm = *p.Metrics.TimeToUnmarshal
 
-	tm.Update(d)
+	go tm.Update(d)
 
 	if err != nil {
 		p.Logger.Error("failed to unmarshal %s, because %s", path, err)
@@ -530,7 +544,7 @@ func (p WOFPointInPolygon) LoadGeoJSON(path string) (*geojson.WOFFeature, error)
 
 	var c metrics.Counter
 	c = *p.Metrics.CountUnmarshal
-	c.Inc(1)
+	go c.Inc(1)
 
 	return feature, err
 }
@@ -545,7 +559,7 @@ func (p WOFPointInPolygon) LoadPolygons(wof *geojson.WOFSpatial) ([]*geo.Polygon
 
 		var c metrics.Counter
 		c = *p.Metrics.CountCacheHit
-		c.Inc(1)
+		go c.Inc(1)
 
 		polygons := cache.([]*geo.Polygon)
 		return polygons, nil
@@ -553,7 +567,7 @@ func (p WOFPointInPolygon) LoadPolygons(wof *geojson.WOFSpatial) ([]*geo.Polygon
 
 	var c metrics.Counter
 	c = *p.Metrics.CountCacheMiss
-	c.Inc(1)
+	go c.Inc(1)
 
 	abs_path := utils.Id2AbsPath(p.Source, id)
 	feature, err := p.LoadGeoJSON(abs_path)
@@ -599,7 +613,7 @@ func (p WOFPointInPolygon) LoadPolygonsForFeature(feature *geojson.WOFFeature) (
 			p.Logger.Warning("starting to push thing out of the cache %d sets on a cache size of %d", cache_set, cache_size)
 		}
 
-		c.Inc(1)
+		go c.Inc(1)
 	}
 
 	return polygons, nil

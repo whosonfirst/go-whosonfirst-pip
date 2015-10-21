@@ -322,7 +322,7 @@ There is a separate on-going process for [sorting out geometries in Who's On Fir
 
 ### Load testing
 
-Individual reverse geocoding lookups are almost always sub-second responses. After unmarshaling GeoJSON files (which are cached) the bottleneck appears to be in the final raycasting intersection tests for anything that is a match in the Rtree and warnings are emitted for anything that takes longer than 0.4 seconds. Although there is room for improvement here (asynchronous processing of candidates, a more efficient raycasting, etc. ) this is mostly only a problem for countries and very large and fiddly cities as evidenced by our load-testing benchmarks.
+Individual reverse geocoding lookups are almost always sub-second responses. After unmarshaling GeoJSON files (which are cached) the bottleneck appears to be in the final raycasting intersection tests for anything that is a match in the Rtree and warnings are emitted for anything that takes longer than 0.5 seconds. Although there is room for improvement here (a more efficient raycasting, etc. ) this is mostly only a problem for countries and very large and fiddly cities as evidenced by our load-testing benchmarks.
 
 ```
 $> siege -c 100 -i -f urls.txt
