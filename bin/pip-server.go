@@ -23,6 +23,7 @@ func main() {
 	var logs = flag.String("logs", "", "Where to write logs to disk")
 	var metrics = flag.String("metrics", "", "Where to write (@rcrowley go-metrics style) metrics to disk")
 	var format = flag.String("metrics-as", "plain", "Format metrics as... ? Valid options are \"json\" and \"plain\"")
+	var cors = flag.Bool("cors", false, "Enable CORS headers")
 	var verbose = flag.Bool("verbose", false, "Enable verbose logging, or log level \"info\"")
 	var verboser = flag.Bool("verboser", false, "Enable really verbose logging, or log level \"debug\"")
 
@@ -168,6 +169,14 @@ func main() {
 		if err != nil {
 			http.Error(rsp, err.Error(), http.StatusInternalServerError)
 			return
+		}
+
+		// maybe this although it seems like it adds functionality for a lot of
+		// features this server does not need - https://github.com/rs/cors
+		// (20151022/thisisaaronland)
+
+		if *cors {
+			rsp.Header().Set("Access-Control-Allow-Origin", "*")
 		}
 
 		rsp.Header().Set("Content-Type", "application/json")

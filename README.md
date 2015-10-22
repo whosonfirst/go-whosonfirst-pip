@@ -187,16 +187,28 @@ You can enable strict placetype checking on the server-side by specifying the `-
 ```
 $> ./bin/pip-server -help
 Usage of ./bin/pip-server:
-  -cache_size=1024: The number of WOF records with large geometries to cache
-  -cache_trigger=2000: The minimum number of coordinates in a WOF record that will trigger caching
-  -data="": The data directory where WOF data lives, required
-  -logs="": Where to write logs to disk
-  -metrics="": Where to write (@rcrowley go-metrics style) metrics to disk
-  -metrics-as="plain": Format metrics as... ? Valid options are "json" and "plain"
-  -port=8080: The port number to listen for requests on
-  -strict=false: Enable strict placetype checking
-  -verbose=false: Enable verbose logging, or log level "info"
-  -verboser=false: Enable really verbose logging, or log level "debug"
+  -cache_size int
+    	      The number of WOF records with large geometries to cache (default 1024)
+  -cache_trigger int
+    		 The minimum number of coordinates in a WOF record that will trigger caching (default 2000)
+  -cors
+	Enable CORS headers
+  -data string
+    	The data directory where WOF data lives, required
+  -logs string
+    	Where to write logs to disk
+  -metrics string
+    	   Where to write (@rcrowley go-metrics style) metrics to disk
+  -metrics-as string
+    	      Format metrics as... ? Valid options are "json" and "plain" (default "plain")
+  -port int
+    	The port number to listen for requests on (default 8080)
+  -strict
+	Enable strict placetype checking
+  -verbose
+	Enable verbose logging, or log level "info"
+  -verboser
+	Enable really verbose logging, or log level "debug"
 ```
 
 ## Metrics
