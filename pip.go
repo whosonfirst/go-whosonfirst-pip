@@ -286,12 +286,32 @@ func (p WOFPointInPolygon) IndexMetaFile(csv_file string) error {
 
 func (p WOFPointInPolygon) GetIntersectsByLatLon(lat float64, lon float64) ([]rtreego.Spatial, time.Duration) {
 
-	t := time.Now()
+	// Error checking on rect?
 
 	pt := rtreego.Point{lon, lat}
-	bbox, _ := rtreego.NewRect(pt, []float64{0.0001, 0.0001}) // how small can I make this?
+	rect, _ := rtreego.NewRect(pt, []float64{0.0001, 0.0001}) // how small can I make this?
 
-	results := p.Rtree.SearchIntersect(bbox)
+	return p.GetIntersectsByRect(rect)
+}
+
+func (p WOFPointInPolygon) GetIntersectsByBoundingBox(swlat float64, swlon float64, nelat float64, nelon float64) ([]rtreego.Spatial, time.Duration) {
+
+	// Error checking on rect?
+
+	llat := nelat - swlat
+	llon := nelon - swlon
+
+	pt := rtreego.Point{swlon, swlat}
+	rect, _ := rtreego.NewRect(pt, []float64{llon, llat})
+
+	return p.GetIntersectsByRect(rect)
+}
+
+func (p WOFPointInPolygon) GetIntersectsByRect(rect *rtreego.Rect) ([]rtreego.Spatial, time.Duration) {
+
+	t := time.Now()
+
+	results := p.Rtree.SearchIntersect(rect)
 
 	d := time.Since(t)
 
