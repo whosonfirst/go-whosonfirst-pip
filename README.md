@@ -19,7 +19,6 @@ go get -u "github.com/whosonfirst/go-whosonfirst-geojson"
 go get -u "github.com/whosonfirst/go-whosonfirst-utils"
 go get -u "github.com/whosonfirst/go-whosonfirst-csv"
 go get -u "github.com/whosonfirst/go-whosonfirst-logs"
-go get -u "github.com/kellydunn/golang-geo"
 go get -u "github.com/dhconnelly/rtreego"
 go get -u "github.com/hashicorp/golang-lru"
 go get -u "github.com/rcrowley/go-metrics"
@@ -457,7 +456,6 @@ First, these should not be confused with malformed GeoJSON files. Some records i
 ## See also
 
 * https://www.github.com/dhconnelly/rtreego
-* https://www.github.com/kellydunn/golang-geo
 * https://github.com/hashicorp/golang-lru
 * https://github.com/rcrowley/go-metrics
 * https://www.github.com/whosonfirst/go-whosonfirst-geojson

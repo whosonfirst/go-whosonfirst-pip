@@ -4,7 +4,6 @@ import (
 	_ "fmt"
 	rtreego "github.com/dhconnelly/rtreego"
 	lru "github.com/hashicorp/golang-lru"
-	geo "github.com/kellydunn/golang-geo"
 	metrics "github.com/rcrowley/go-metrics"
 	csv "github.com/whosonfirst/go-whosonfirst-csv"
 	geojson "github.com/whosonfirst/go-whosonfirst-geojson"
@@ -435,8 +434,6 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 	wg := new(sync.WaitGroup)
 	wg.Add(len(results))
 
-	pt := geo.NewPoint(lat, lon)
-
 	contained := make([]*geojson.WOFSpatial, 0)
 	// timings := make([]*WOFPointInPolygonTiming, 0)
 
@@ -448,15 +445,7 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 
 			defer wg.Done()
 
-			// id := wof.Id
-			// t1 := time.Now()
-
 			polygons, err := p.LoadPolygons(wof)
-
-			// d1 := time.Since(t1)
-
-			// load_event := fmt.Sprintf("load_%d", id)
-			// timings = append(timings, NewWOFPointInPolygonTiming(load_event, d1))
 
 			if err != nil {
 				p.Logger.Error("failed to load polygons for %d, because %v", wof.Id, err)
@@ -465,39 +454,21 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 
 			is_contained := false
 
-			// count := len(polygons)
-			// points := 0
-			// iters := 0
-
-			// t2 := time.Now()
-
-			// Now we check each polygon concurrently - is this a good
-			// idea for things like countries with lots of polygons?
-			// maybe not... (20151020/thisisaaronland)
-
 			wg2 := new(sync.WaitGroup)
 			wg2.Add(len(polygons))
 
 			for _, poly := range polygons {
 
-				wg_contains := func(poly *geo.Polygon) {
+				wg_contains := func(p *geojson.WOFPolygon, lt float64, ln float64) {
 
 					defer wg2.Done()
 
-					if is_contained {
-						return
-					}
-
-					// points += len(poly.Points())
-					// iters += 1
-
-					if poly.Contains(pt) {
-						// p.Logger.Status("point for %d is contained after checking %d/%d polygons", wof.Id, iters, count)
+					if p.Contains(lt, ln) {
 						is_contained = true
 					}
 				}
 
-				go wg_contains(poly)
+				go wg_contains(poly, lat, lon)
 			}
 
 			wg2.Wait()
@@ -569,7 +540,7 @@ func (p WOFPointInPolygon) LoadGeoJSON(path string) (*geojson.WOFFeature, error)
 	return feature, err
 }
 
-func (p WOFPointInPolygon) LoadPolygons(wof *geojson.WOFSpatial) ([]*geo.Polygon, error) {
+func (p WOFPointInPolygon) LoadPolygons(wof *geojson.WOFSpatial) ([]*geojson.WOFPolygon, error) {
 
 	id := wof.Id
 
@@ -581,7 +552,7 @@ func (p WOFPointInPolygon) LoadPolygons(wof *geojson.WOFSpatial) ([]*geo.Polygon
 		c = *p.Metrics.CountCacheHit
 		go c.Inc(1)
 
-		polygons := cache.([]*geo.Polygon)
+		polygons := cache.([]*geojson.WOFPolygon)
 		return polygons, nil
 	}
 
@@ -605,18 +576,20 @@ func (p WOFPointInPolygon) LoadPolygons(wof *geojson.WOFSpatial) ([]*geo.Polygon
 	return polygons, nil
 }
 
-func (p WOFPointInPolygon) LoadPolygonsForFeature(feature *geojson.WOFFeature) ([]*geo.Polygon, error) {
+func (p WOFPointInPolygon) LoadPolygonsForFeature(feature *geojson.WOFFeature) ([]*geojson.WOFPolygon, error) {
+
+	id := feature.WOFId()
 
 	polygons := feature.GeomToPolygons()
 	var points int
 
-	for _, p := range polygons {
-		points += len(p.Points())
+	for _, pl := range polygons {
+		points += pl.CountPoints()
 	}
 
-	if points >= p.CacheTrigger {
+	p.Logger.Debug("%d has %d points", id, points)
 
-		id := feature.WOFId()
+	if points >= p.CacheTrigger {
 
 		p.Logger.Debug("caching %d because it has E_EXCESSIVE_POINTS (%d)", id, points)
 
