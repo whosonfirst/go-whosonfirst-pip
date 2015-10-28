@@ -281,7 +281,7 @@ This is how it works now:
 
 1. We are using the [rtreego](https://www.github.com/dhconnelly/rtreego) library to do most of the heavy lifting and filtering.
 2. Results from the rtreego `SearchIntersect` method are "inflated" and recast as geojson `WOFSpatial` object-interface-struct-things.
-3. We are performing a final containment check on the results by reading each corresponding GeoJSON file and converting its geometry in to one or more [golang-geo](https://www.github.com/kellydunn/golang-geo) `Polygon` object-interface-struct-things. Each of these object-interface-struct-things calls its `Contains` method on an input coordinate.
+3. We are performing a final containment check on the results by reading each corresponding GeoJSON file using [go-whosonfirst-geojson](https://github.com/whosonfirst/go-whosonfirst-geojson) and calling the `Contains` method on each of the items returned by the `GeomToPolygon` method. What's _actually_ happening is that the GeoJSON geometry is being converted in to one or more [golang-geo](https://www.github.com/kellydunn/golang-geo) `Polygon` object-interface-struct-things. Each of these object-interface-struct-things calls its `Contains` method on an input coordinate.
 4. If any given set of `Polygon` object-interface-struct-things contains more than 100 points it is cached using the [golang-lru](https://github.com/hashicorp/golang-lru) package.
 
 ### Caching
