@@ -23,3 +23,15 @@ bin: 	self
 	go build -o bin/index bin/index.go
 	go build -o bin/index-csv bin/index-csv.go
 	go build -o bin/pip-server bin/pip-server.go
+
+compiled: osx windows
+
+osx: 
+	if test -d compiled/osx; then rm -rf compiled/osx; fi
+	mkdir -p compiled/osx
+	@GOOS='darwin' @GOARCH='amd64'; go build -o compiled/osx/pip-server bin/pip-server.go 
+
+windows: 
+	if test -d compiled/windows; then rm -rf compiled/windows; fi
+	mkdir -p compiled/windows
+	@GOOS='windows' @GOARCH='amd64'; go build -o bin/pip-server.go 
