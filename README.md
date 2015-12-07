@@ -431,23 +431,11 @@ $> /bin/grep -A 1 runtime.MemStats.HeapInuse metrics.log
 
 ### Using this with other data sources
 
-Yeah... _probably_. Not? _Yet._
+Yes! With the following provisos:
 
-There's nothing in this library per se that would prevent you from using it with any old bag of GeoJSON. It's more that this library uses [go-whosonfirst-geojson](https://www.github.com/whosonfirst/go-whosonfirst-geojson) which _does_ make some WOF-specific assumptions.
-
-Specifically, in the `EnSpatialize` method which is used to generate a `rtreego.Spatial` compatible interface, like this:
-
-```
-func (wof WOFFeature) EnSpatialize() (*WOFSpatial, error) {
-
-     // These all look for things prefixed by "wof:" in the properties hash
-
-     id := wof.WOFId()
-     name := wof.WOFName()
-     placetype := wof.WOFPlacetype()
-```
-
-So that should be changed, or made WOF-specific. Or something. Because yes, you ought to be able to use this (and the `go-whosonfirst-geojson`) library with any old GeoJSON file out there. But not today.
+1. Currently only GeoJSON `Feature` records are supported. You can not index `FeatureCollections` yet. I mean you could write the code to index them but the code doesn't do it for you yet.
+2. Your GeoJSON `properties` dictionary has the following keys: `id`, `name` and `placetype`. The values can be anything (where "anything" means something that can be converted to an integer in the case of the `id` key).
+3. Your GeoJSON `feature` dictionary has a `bbox` key that is an array of coordinates, [per the GeoJSON spec](http://geojson.org/geojson-spec.html#bounding-boxes).
 
 ### Less-than-perfect GeoJSON files
 
