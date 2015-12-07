@@ -16,13 +16,13 @@ deps:   self
 	go get -u "github.com/rcrowley/go-metrics"
 
 fmt:
-	go fmt bin/*.go
+	go fmt cmd/*.go
 	go fmt *.go
 
 bin: 	self
-	go build -o bin/index bin/index.go
-	go build -o bin/index-csv bin/index-csv.go
-	go build -o bin/pip-server bin/pip-server.go
+	go build -o bin/wof-pip-index cmd/wof-pip-index.go
+	go build -o bin/wof-pip-index-csv cmd/wof-pip-index-csv.go
+	go build -o bin/wof-pip-server cmd/wof-pip-server.go
 
 compiled: osx windows
 
