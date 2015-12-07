@@ -436,6 +436,7 @@ Yes! With the following provisos:
 1. Currently only GeoJSON `Feature` records are supported. You can not index `FeatureCollections` yet. I mean you could write the code to index them but the code doesn't do it for you yet.
 2. Your GeoJSON `properties` dictionary has the following keys: `id`, `name` and `placetype`. The values can be anything (where "anything" means something that can be converted to an integer in the case of the `id` key).
 3. Your GeoJSON `feature` dictionary has a `bbox` key that is an array of coordinates, [per the GeoJSON spec](http://geojson.org/geojson-spec.html#bounding-boxes).
+4. Your GeoJSON file ends with `.geojson` (and not say `.json` or something else)
 
 ### Less-than-perfect GeoJSON files
 
