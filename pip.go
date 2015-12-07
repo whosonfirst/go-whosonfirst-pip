@@ -108,7 +108,8 @@ func NewPointInPolygonSimple(source string) (*WOFPointInPolygon, error) {
 	cache_size := 100
 	cache_trigger := 1000
 
-	logger := log.NewWOFLogger(os.Stdout, "[pip-server]", "debug")
+	logger := log.NewWOFLogger("[wof-pip-server]")
+	logger.AddLogger(os.Stdout, "debug")
 
 	return NewPointInPolygon(source, cache_size, cache_trigger, logger)
 }
@@ -578,7 +579,7 @@ func (p WOFPointInPolygon) LoadPolygons(wof *geojson.WOFSpatial) ([]*geojson.WOF
 
 func (p WOFPointInPolygon) LoadPolygonsForFeature(feature *geojson.WOFFeature) ([]*geojson.WOFPolygon, error) {
 
-	id := feature.WOFId()
+	id := feature.Id()
 
 	polygons := feature.GeomToPolygons()
 	var points int

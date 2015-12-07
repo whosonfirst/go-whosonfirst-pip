@@ -66,7 +66,8 @@ func main() {
 		l_writer = io.MultiWriter(os.Stdout, l_file)
 	}
 
-	logger := log.NewWOFLogger(l_writer, "[pip-server] ", loglevel)
+	logger := log.NewWOFLogger("[wof-pip-server] ")
+	logger.AddLogger(l_writer, loglevel)
 
 	p, p_err := pip.NewPointInPolygon(*data, *cache_size, *cache_trigger, logger)
 
