@@ -15,6 +15,7 @@ import (
 
 func main() {
 
+     	var host = flag.String("host", "localhost", "The hostname to listen for requests on")
 	var port = flag.Int("port", 8080, "The port number to listen for requests on")
 	var data = flag.String("data", "", "The data directory where WOF data lives, required")
 	var cache_size = flag.Int("cache_size", 1024, "The number of WOF records with large geometries to cache")
@@ -184,8 +185,8 @@ func main() {
 		rsp.Write(js)
 	}
 
-	str_port := fmt.Sprintf(":%d", *port)
+	endpoint := fmt.Sprintf("%s:%d", *host, *port)
 
 	http.HandleFunc("/", handler)
-	http.ListenAndServe(str_port, nil)
+	http.ListenAndServe(endpoint, nil)
 }
