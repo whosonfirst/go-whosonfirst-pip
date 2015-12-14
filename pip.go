@@ -190,25 +190,20 @@ func (p WOFPointInPolygon) IndexGeoJSONFile(path string) error {
 	return nil
 }
 
-/*
-func (p WOFPointInPolygon) IndexGeoJSONFeature(feature *geojson.WOFFeature, path_id string, path_name string, path_placetype string) error {
-
-	spatial, spatial_err := feature.EnSpatialize(path_id, path_name, path_placetype)
-
-	if spatial_err != nil {
-		p.Logger.Error("failed to enspatialize feature, because %s", spatial_err)
-		return spatial_err
-	}
-
-	return p.IndexSpatialFeature(spatial)
-}
-*/
-
 func (p WOFPointInPolygon) IndexGeoJSONFeature(feature *geojson.WOFFeature) error {
 
 	spatial, spatial_err := feature.EnSpatialize()
 
 	if spatial_err != nil {
+
+		body := feature.Body()
+		geom_type, ok := body.Path("geometry.type").Data().(string)
+
+		if ok && geom_type == "Point" {
+			p.Logger.Warning("feature is a Point type so I am ignoring it...")
+			return nil
+		}
+
 		p.Logger.Error("failed to enspatialize feature, because %s", spatial_err)
 		return spatial_err
 	}
