@@ -1,6 +1,6 @@
 # go-whosonfirst-pip
 
-An in-memory point-in-polygon (reverse geocoding) library for Who's On First data
+An in-memory point-in-polygon (reverse geocoding) package for Who's On First data
 
 ## Set up
 
