@@ -4,7 +4,7 @@ An in-memory point-in-polygon (reverse geocoding) package for Who's On First dat
 
 ## Set up
 
-### Setting up your Go path
+First make sure you've configured the `GOPATH` environment variable, like this:
 
 ```
 export GOPATH=`pwd`
@@ -12,42 +12,16 @@ export GOPATH=`pwd`
 
 _Adjust accordingly if you are using a shell other than Bash._
 
-### Dependencies
+The easiest way to install all the dependencies and compile all of the code and command line tools is to use the handy Makefile that is included with this repository, like this:
 
 ```
-go get -u "github.com/whosonfirst/go-whosonfirst-geojson"
-go get -u "github.com/whosonfirst/go-whosonfirst-utils"
-go get -u "github.com/whosonfirst/go-whosonfirst-csv"
-go get -u "github.com/whosonfirst/go-whosonfirst-log"
-go get -u "github.com/dhconnelly/rtreego"
-go get -u "github.com/hashicorp/golang-lru"
-go get -u "github.com/rcrowley/go-metrics"
+make deps
+make bin
 ```
 
-There is also a helpful `deps` target in the included Makefile to do this for you.
+In addition to fetching all the necessary dependencies this will clone the `go-whosonfirst-pip` packages in to the `src` directory (along with all the dependencies) which is a thing you need to do because of the way Go expects code to organized. It's kind of weird and annoying but also shouting-at-the-sky territory so the Makefile is designed to hide the bother from you.
 
-### Mirror mirror on the wall
-
-```
-if test -d pkg; then rm -rf pkg; fi
-if test -d src/github.com/whosonfirst/go-whosonfirst-pip; then rm -rf src/github.com/whosonfirst/go-whosonfirst-pip; fi
-mkdir -p src/github.com/whosonfirst/go-whosonfirst-pip
-cp *.go src/github.com/whosonfirst/go-whosonfirst-pip/
-```
-
-I am still a bit lost and baffled by how and where Go thinks to look for stuff. In order to make standalone tools compile locally I just clone any package specific code in to the `src` directory. It's not pretty but it works.
-
-There is also a helpful `self` target in the included Makefile to do this for you.
-
-### Tools
-
-```
-go build -o bin/index bin/index.go
-go build -o bin/index-csv bin/index-csv.go
-go build -o bin/pip-server bin/pip-server.go
-```
-
-There is also a helpful `bin` target in the included Makefile to do this for you.
+If you don't have `make` installed on your computer or just want to do things by hand then [you should spend some time reading the Makefile](Makefile) itself. The revelant "targets" (which are the equivalent of commands in Makefile-speak) that you will need are `deps` for fetching dependencies, `self` for cloning files and `bin` for building the command line tools.
 
 ## Usage
 
