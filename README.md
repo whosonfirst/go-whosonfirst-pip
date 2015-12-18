@@ -18,7 +18,7 @@ _Adjust accordingly if you are using a shell other than Bash._
 go get -u "github.com/whosonfirst/go-whosonfirst-geojson"
 go get -u "github.com/whosonfirst/go-whosonfirst-utils"
 go get -u "github.com/whosonfirst/go-whosonfirst-csv"
-go get -u "github.com/whosonfirst/go-whosonfirst-logs"
+go get -u "github.com/whosonfirst/go-whosonfirst-log"
 go get -u "github.com/dhconnelly/rtreego"
 go get -u "github.com/hashicorp/golang-lru"
 go get -u "github.com/rcrowley/go-metrics"
