@@ -108,7 +108,7 @@ If you're curious how the sausage is made.
 There is also a standalone HTTP server for performing point-in-polygon lookups. It is instantiated with a `data` parameter and one or more "meta" CSV files, like this:
 
 ```
-./bin/pip-server -data /usr/local/mapzen/whosonfirst-data/data/ -strict /usr/local/mapzen/whosonfirst-data/meta/wof-country-latest.csv /uslocal/mapzen/whosonfirst-data/meta/wof-neighbourhood-latest.csv 
+./bin/wof-pip-server -data /usr/local/mapzen/whosonfirst-data/data/ -strict /usr/local/mapzen/whosonfirst-data/meta/wof-country-latest.csv /uslocal/mapzen/whosonfirst-data/meta/wof-neighbourhood-latest.csv 
 indexed 50125 records in 64.023 seconds 
 [placetype] country 219
 [placetype] neighbourhood 49906
@@ -158,8 +158,8 @@ $> curl 'http://localhost:8080?latitude=40.677524&longitude=-73.987343&placetype
 You can enable strict placetype checking on the server-side by specifying the `-strict` flag. This will ensure that the placetype being specificed has actually been indexed, returning an error if not. `pip-server` has many other option-knobs and they are:
 
 ```
-$> ./bin/pip-server -help
-Usage of ./bin/pip-server:
+$> ./bin/wof-pip-server -help
+Usage of ./bin/wof-pip-server:
   -cache_size int
     	      The number of WOF records with large geometries to cache (default 1024)
   -cache_trigger int
