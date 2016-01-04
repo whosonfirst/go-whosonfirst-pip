@@ -23,3 +23,4 @@ bin: 	self
 	@GOPATH=$(shell pwd) go build -o bin/wof-pip-index cmd/wof-pip-index.go
 	@GOPATH=$(shell pwd) go build -o bin/wof-pip-index-csv cmd/wof-pip-index-csv.go
 	@GOPATH=$(shell pwd) go build -o bin/wof-pip-server cmd/wof-pip-server.go
+	@GOPATH=$(shell pwd) go build -o bin/wof-pip-proxy cmd/wof-pip-proxy.go
