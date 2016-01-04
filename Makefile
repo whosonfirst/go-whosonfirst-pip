@@ -7,31 +7,19 @@ self:   prep
 	cp pip.go src/github.com/whosonfirst/go-whosonfirst-pip/
 
 deps:   self
-	go get -u "github.com/whosonfirst/go-whosonfirst-geojson"
-	go get -u "github.com/whosonfirst/go-whosonfirst-utils"
-	go get -u "github.com/whosonfirst/go-whosonfirst-csv"
-	go get -u "github.com/whosonfirst/go-whosonfirst-log"
-	go get -u "github.com/dhconnelly/rtreego"
-	go get -u "github.com/hashicorp/golang-lru"
-	go get -u "github.com/rcrowley/go-metrics"
+	@GOPATH=$(shell pwd) go get -u "github.com/whosonfirst/go-whosonfirst-geojson"
+	@GOPATH=$(shell pwd) go get -u "github.com/whosonfirst/go-whosonfirst-utils"
+	@GOPATH=$(shell pwd) go get -u "github.com/whosonfirst/go-whosonfirst-csv"
+	@GOPATH=$(shell pwd) go get -u "github.com/whosonfirst/go-whosonfirst-log"
+	@GOPATH=$(shell pwd) go get -u "github.com/dhconnelly/rtreego"
+	@GOPATH=$(shell pwd) go get -u "github.com/hashicorp/golang-lru"
+	@GOPATH=$(shell pwd) go get -u "github.com/rcrowley/go-metrics"
 
 fmt:
 	go fmt cmd/*.go
 	go fmt *.go
 
 bin: 	self
-	go build -o bin/wof-pip-index cmd/wof-pip-index.go
-	go build -o bin/wof-pip-index-csv cmd/wof-pip-index-csv.go
-	go build -o bin/wof-pip-server cmd/wof-pip-server.go
-
-compiled: osx windows
-
-osx: 
-	if test -d compiled/osx; then rm -rf compiled/osx; fi
-	mkdir -p compiled/osx
-	@GOOS='darwin' @GOARCH='amd64'; go build -o compiled/osx/pip-server bin/pip-server.go 
-
-windows: 
-	if test -d compiled/windows; then rm -rf compiled/windows; fi
-	mkdir -p compiled/windows
-	@GOOS='windows' @GOARCH='amd64'; go build -o bin/pip-server.go 
+	@GOPATH=$(shell pwd) go build -o bin/wof-pip-index cmd/wof-pip-index.go
+	@GOPATH=$(shell pwd) go build -o bin/wof-pip-index-csv cmd/wof-pip-index-csv.go
+	@GOPATH=$(shell pwd) go build -o bin/wof-pip-server cmd/wof-pip-server.go
