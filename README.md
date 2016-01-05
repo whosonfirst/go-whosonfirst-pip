@@ -204,9 +204,17 @@ Here's what an example config file looks like:
 ]
 ```
 
-_You can add as many targets are you want to your config file._
+You can add as many targets are you want to your config file.
 
-And then:
+There is also an handy tool in the `utils` directory called [mk-wof-config.py](https://github.com/whosonfirst/go-whosonfirst-pip/blob/master/utils/mk-wof-config.py) that will auto-generate a config file for one or more [placetypes](https://github.com/whosonfirst/whosonfirst-placetypes#roles) assigning each one a random port number and referencing their `meta` file in the [whosonfirst-data](https://github.com/whosonfirst/whosonfirst-data) repository. For example, to generate a config file for just the "common" placetypes you would do:
+
+```
+$> utils/mk-wof-config.py -d /usr/local/mapzen/whosonfirst-data/data -r common -o config.json
+```
+
+_Note: You will need to install the [py-mapzen-whosonfirst-placetypes](https://github.com/whosonfirst/py-mapzen-whosonfirst-placetypes) Python library for the `mk-wof-config.py` to work. Eventually this functionality might be rewritten in Go but not today._
+
+Finally, this is how you might look something up using the `wof-pip-proxy` server:
 
 ```
 $> curl -s 'http://localhost:1111/locality?latitude=40.677524&longitude=-73.987343' | python -mjson.tool
