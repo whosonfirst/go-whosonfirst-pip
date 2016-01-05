@@ -204,7 +204,7 @@ Here's what an example config file looks like:
 ]
 ```
 
-You can add as many targets are you want to your config file.
+You can add as many targets are you want to your config file and the value of the `Target` property can be what ever you want (assuming it is URI safe).
 
 There is also an handy tool in the `utils` directory called [mk-wof-config.py](https://github.com/whosonfirst/go-whosonfirst-pip/blob/master/utils/mk-wof-config.py) that will auto-generate a config file for one or more [placetypes](https://github.com/whosonfirst/whosonfirst-placetypes#roles) assigning each one a random port number and referencing their `meta` file in the [whosonfirst-data](https://github.com/whosonfirst/whosonfirst-data) repository. For example, to generate a config file for just the "common" placetypes you would do:
 
