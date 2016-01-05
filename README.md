@@ -212,7 +212,7 @@ There is also an handy tool in the `utils` directory called [mk-wof-config.py](h
 $> ./utils/mk-wof-config.py -d /usr/local/mapzen/whosonfirst-data/data -r common -o config.json
 ```
 
-_Note: You will need to install the [py-mapzen-whosonfirst-placetypes](https://github.com/whosonfirst/py-mapzen-whosonfirst-placetypes) Python library for the `mk-wof-config.py` to work. Eventually this functionality might be rewritten in Go but not today._
+_Note: You will need to install the [py-mapzen-whosonfirst-placetypes](https://github.com/whosonfirst/py-mapzen-whosonfirst-placetypes) Python library for the `mk-wof-config.py` script to work. Eventually this functionality might be rewritten in Go but not today._
 
 Finally, this is how you might look something up using the `wof-pip-proxy` server:
 
