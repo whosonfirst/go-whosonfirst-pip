@@ -5,3 +5,4 @@ bin/index
 bin/index-csv
 bin/pip-server
 *.log
+*.json
