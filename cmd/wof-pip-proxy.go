@@ -13,7 +13,7 @@ import (
 	"strings"
 )
 
-type WOFProxyTargets map[string]*WOFProxyTarget
+type WOFProxyTargets map[string]WOFProxyTarget
 
 type WOFProxyTarget struct {
 	Target string
@@ -22,7 +22,7 @@ type WOFProxyTarget struct {
 	Meta   string
 }
 
-func (pt *WOFProxyTarget) URL() string {
+func (pt WOFProxyTarget) URL() string {
 
 	scheme := "http"
 	host := "localhost"
@@ -36,7 +36,7 @@ func (pt *WOFProxyTarget) URL() string {
 	return fmt.Sprintf("%s://%s:%d", scheme, host, port)
 }
 
-func (pt *WOFProxyTarget) Ping() (bool, error) {
+func (pt WOFProxyTarget) Ping() (bool, error) {
 
 	/*
 	   Note that wof-pip-server does not have a true 'ping' endpoint
@@ -68,6 +68,8 @@ func main() {
 	var host = flag.String("host", "localhost", "The hostname to listen for requests on")
 	var port = flag.Int("port", 1111, "The port number to listen for requests on")
 	var config = flag.String("config", "", "... (If the value is - then read the config from STDIN)")
+
+	// TO DO - logging...
 
 	flag.Parse()
 
@@ -117,8 +119,8 @@ func main() {
 			but it appears as though Go deliberately chooses _not_ to support subprocesses
 			which is kind of weird but there you go... Maybe it's possible and I just don't
 			know the magic incantation but for now we're going to assume that starting the
-			individual servers is something else's problem... Good times.
-			(20160104/thisisaaronland)
+			individual servers is something else's problem... See also `utils/proxy.py` for
+			precisely this reason... Good times... (20160104/thisisaaronland)
 
 		*/
 
@@ -129,12 +131,13 @@ func main() {
 			panic(msg)
 		}
 
+		fmt.Println(p.Target, p.URL())
 	}
 
 	handler := proxyHandlerFunc(targets)
 	proxyHandler := http.HandlerFunc(handler)
 
-	fmt.Println(endpoint)
+	fmt.Printf("proxying requests at %s\n", endpoint)
 
 	http.ListenAndServe(endpoint, proxyHandler)
 }
@@ -153,7 +156,7 @@ func proxyHandlerTargets(spec []byte) (WOFProxyTargets, error) {
 
 	for _, p := range pt {
 
-		targets[p.Target] = &p
+		targets[p.Target] = p
 	}
 
 	return targets, nil
@@ -184,6 +187,13 @@ func proxyHandlerFunc(targets WOFProxyTargets) WOFProxyHandler {
 		// please just make me a url.URL thingy...
 
 		url := target.URL() + "?" + req.URL.RawQuery
+
+		/*
+			src := req.URL.Path
+			dst := url
+
+			fmt.Printf("proxy %s to %s\n", src, dst)
+		*/
 
 		_req, err := http.NewRequest("GET", url, nil)
 
@@ -216,4 +226,5 @@ func proxyHandlerFunc(targets WOFProxyTargets) WOFProxyHandler {
 
 		rsp.Write(result)
 	}
+
 }

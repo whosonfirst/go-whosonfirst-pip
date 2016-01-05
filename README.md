@@ -105,6 +105,8 @@ If you're curious how the sausage is made.
 
 ### HTTP Ponies
 
+#### wof-pip-server
+
 There is also a standalone HTTP server for performing point-in-polygon lookups. It is instantiated with a `data` parameter and one or more "meta" CSV files, like this:
 
 ```
@@ -182,6 +184,95 @@ Usage of ./bin/wof-pip-server:
 	Enable verbose logging, or log level "info"
   -verboser
 	Enable really verbose logging, or log level "debug"
+```
+
+#### wof-pip-proxy
+
+This is another HTTP pony that proxies requests to multiple instances of `wof-pip-server` routing the requests to multiple, separate URL paths on a single host. This is largely a convenience so that other parts of your code don't need to remember (or even think about) what port a given PIP server is running on. You would run it like this:
+
+```
+$> ./bin/wof-pip-proxy -config config.json 
+proxying requests at localhost:1111
+```
+
+Here's what an example config file looks like:
+
+```
+[
+    {"Target": "test", "Host": "localhost", "Port": 1212, "Meta": "/usr/local/mapzen/whosonfirst-data/meta/wof-continent-latest.csv" },
+    {"Target": "locality", "Host": "localhost", "Port": 1213, "Meta": "/usr/local/mapzen/whosonfirst-data/meta/wof-locality-latest.csv" }
+]
+```
+
+_You can add as many targets are you want to your config file._
+
+And then:
+
+```
+$> curl -s 'http://localhost:1111/locality?latitude=40.677524&longitude=-73.987343' | python -mjson.tool
+[
+    {
+        "Id": 85977539,
+        "Name": "New York",
+        "Offset": -1,
+        "Placetype": "locality"
+    }
+]
+$> curl -s 'http://localhost:1111/test?latitude=40.677524&longitude=-73.987343' | python -mjson.tool
+[
+    {
+        "Id": 102191575,
+        "Name": "North America",
+        "Offset": -1,
+        "Placetype": "continent"
+    }
+]
+```
+
+The `wof-pip-proxy` server only proxies _already running instances_ of `wof-pip-server`. _There are boring computer reasons for this and they are boring and computer-y._
+
+Instead there is also a _separate_ Python utility included with this repository for starting up (n) number of instances of `wof-pip-server` as defined in your config file and then finally starting a copy of `wof-pip-proxy`. For example:
+
+```
+$> ./utils/proxy.py -d /usr/local/mapzen/whosonfirst-data/data/ --proxy-config config.json 
+
+# depending on your proxy config a lot of stuff like this...
+
+INFO:root:ping for http://localhost:1213 failed, waiting
+INFO:root:pause...
+INFO:root:ping for http://localhost:1213 failed, waiting
+INFO:root:pause...
+[wof-pip-server] 03:24:15.671671 [warning] scheduling /usr/local/mapzen/whosonfirst-data/data/102/023/977/102023977.geojson for pre-caching because its time to load exceeds 0.01 se\
+conds: 0.012060
+[wof-pip-server] 03:24:15.982738 [status] indexed 160682 records in 92.611 seconds
+[wof-pip-server] 03:24:15.982768 [status] indexed locality: 160682
+
+# followed eventually by this...
+
+proxying requests at localhost:1111
+```
+
+And then, just like the example above:
+
+```
+$> curl -s 'http://localhost:1111/locality?latitude=40.677524&longitude=-73.987343' | python -mjson.tool
+[
+    {
+        "Id": 85977539,
+        "Name": "New York",
+        "Offset": -1,
+        "Placetype": "locality"
+    }
+]
+$> curl -s 'http://localhost:1111/test?latitude=40.677524&longitude=-73.987343' | python -mjson.tool
+[
+    {
+        "Id": 102191575,
+        "Name": "North America",
+        "Offset": -1,
+        "Placetype": "continent"
+    }
+]
 ```
 
 ## Metrics
