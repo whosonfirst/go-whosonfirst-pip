@@ -226,6 +226,7 @@ $> curl -s 'http://localhost:1111/locality?latitude=40.677524&longitude=-73.9873
         "Placetype": "locality"
     }
 ]
+
 $> curl -s 'http://localhost:1111/test?latitude=40.677524&longitude=-73.987343' | python -mjson.tool
 [
     {
@@ -270,6 +271,7 @@ $> curl -s 'http://localhost:1111/locality?latitude=40.677524&longitude=-73.9873
         "Placetype": "locality"
     }
 ]
+
 $> curl -s 'http://localhost:1111/test?latitude=40.677524&longitude=-73.987343' | python -mjson.tool
 [
     {
