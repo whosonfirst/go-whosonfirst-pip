@@ -110,7 +110,7 @@ If you're curious how the sausage is made.
 There is also a standalone HTTP server for performing point-in-polygon lookups. It is instantiated with a `data` parameter and one or more "meta" CSV files, like this:
 
 ```
-./bin/wof-pip-server -data /usr/local/mapzen/whosonfirst-data/data/ -strict /usr/local/mapzen/whosonfirst-data/meta/wof-country-latest.csv /uslocal/mapzen/whosonfirst-data/meta/wof-neighbourhood-latest.csv 
+./bin/wof-pip-server -data /usr/local/mapzen/whosonfirst-data/data/ -strict /usr/local/mapzen/whosonfirst-data/meta/wof-country-latest.csv /usr/local/mapzen/whosonfirst-data/meta/wof-neighbourhood-latest.csv 
 indexed 50125 records in 64.023 seconds 
 [placetype] country 219
 [placetype] neighbourhood 49906
