@@ -6,6 +6,11 @@ self:   prep
 	mkdir -p src/github.com/whosonfirst/go-whosonfirst-pip
 	cp pip.go src/github.com/whosonfirst/go-whosonfirst-pip/
 
+rmdeps:
+	if test -d src; then rm -rf src; fi 
+
+build:	rmdeps deps fmt bin
+
 deps:   self
 	@GOPATH=$(shell pwd) go get -u "github.com/whosonfirst/go-whosonfirst-geojson"
 	@GOPATH=$(shell pwd) go get -u "github.com/whosonfirst/go-whosonfirst-utils"
