@@ -1,7 +1,7 @@
 #!/bin/sh -e
 
 ### BEGIN INIT INFO
-# Provides:          wof-pip-proxy.sh
+# Provides:          wof-pip-proxy-start.sh
 # Required-Start:    $remote_fs $syslog
 # Required-Stop:     $remote_fs $syslog
 # Default-Start:     2 3 4 5
@@ -12,18 +12,24 @@
 
 # Stuff you will need to edit
 
-PROXY_USER=YOUR_PROXY_SERVER_USER
+WOF_DATA=YOUR_WOF_DATA
+
+PIP_DAEMON=YOUR_WOF_PIP_DAEMON
+
 PROXY_DAEMON=YOUR_PROXY_SERVER_PATH
 PROXY_CONFIG=YOUR_PROXY_CONFIG
 
-PROXY_ARGS=""
+START_USER=YOUR_PROXY_SERVER_USER
+START_DAEMON=YOUR_START_DAEMON
+
+START_ARGS=""
 
 # Okay - you shouldn't need to edit anything after this
 
-PROXY_ARGS="-data ${WOF_DATA} ${PROXY_ARGS} ${WOF_META}"
+START_ARGS="--data ${WOF_DATA} --pip-server ${PIP_DAEMON} --proxy-server ${PROXY_DAEMON} --proxy-config ${PROXY_CONFIG} ${START_ARGS}"
 
 PID_PATH=/var/run/
-PID_NAME=`basename ${PROXY_DAEMON}`
+PID_NAME='wof-pip-proxy-start'
 PID_FILE=${PID_PATH}${PID_NAME}.pid
 
 if [ "$(id -u)" != "0" ]; then
@@ -34,8 +40,8 @@ fi
 case $1 in
     debug)
 
-        echo "Starting ${PID_NAME} in debug mode w/ options: ${PROXY_ARGS}"
-        exec sudo -u $PROXY_USER $PROXY_DAEMON $PROXY_ARGS
+        echo "Starting ${PID_NAME} in debug mode w/ options: ${START_ARGS}"
+        exec sudo -u $START_USER $START_DAEMON $START_ARGS
         ;;
     start)
 
@@ -44,8 +50,8 @@ case $1 in
             exit 1
 	    fi
 
-        echo "Starting ${PID_NAME} w/ options: ${PROXY_ARGS}"
-        PID=`exec sudo -u $PROXY_USER $PROXY_DAEMON $PROXY_ARGS  > /dev/null 2>&1 & echo $!`
+        echo "Starting ${PID_NAME} w/ options: ${START_ARGS}"
+        PID=`exec sudo -u $START_USER $START_DAEMON $START_ARGS  > /dev/null 2>&1 & echo $!`
 
         if [ -z $PID ]; then
             printf "%s\n" "Fail"

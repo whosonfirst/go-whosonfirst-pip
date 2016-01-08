@@ -241,7 +241,7 @@ $> curl -s 'http://localhost:1111/test?latitude=40.677524&longitude=-73.987343' 
 The `wof-pip-proxy` server only proxies _already running instances_ of `wof-pip-server`. There are boring computer reasons for this and they are boring and computer-y. Instead there is also a _separate_ Python utility included with this repository for starting up (n) number of instances of `wof-pip-server` as defined in your config file and then finally starting a copy of `wof-pip-proxy`. For example:
 
 ```
-$> ./utils/proxy.py -d /usr/local/mapzen/whosonfirst-data/data/ --proxy-config config.json 
+$> ./utils/wof-pip-proxy-start.py -d /usr/local/mapzen/whosonfirst-data/data/ --proxy-config config.json 
 
 # depending on your proxy config a lot of stuff like this...
 

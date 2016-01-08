@@ -36,7 +36,7 @@ fi
 case $1 in
     debug)
 
-        echo "Starting ucd in debug mode w/ options: ${PIP_ARGS}"
+        echo "Starting ${PID_NAME} in debug mode w/ options: ${PIP_ARGS}"
         exec sudo -u $PIP_USER $PIP_DAEMON $PIP_ARGS
         ;;
     start)
@@ -46,7 +46,7 @@ case $1 in
             exit 1
 	    fi
 
-        echo "Starting ucd w/ options: ${PIP_ARGS}"
+        echo "Starting ${PID_NAME} w/ options: ${PIP_ARGS}"
         PID=`exec sudo -u $PIP_USER $PIP_DAEMON $PIP_ARGS  > /dev/null 2>&1 & echo $!`
 
         if [ -z $PID ]; then
