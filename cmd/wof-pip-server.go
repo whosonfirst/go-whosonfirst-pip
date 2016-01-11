@@ -21,12 +21,11 @@ func main() {
 	var cache_size = flag.Int("cache_size", 1024, "The number of WOF records with large geometries to cache")
 	var cache_trigger = flag.Int("cache_trigger", 2000, "The minimum number of coordinates in a WOF record that will trigger caching")
 	var strict = flag.Bool("strict", false, "Enable strict placetype checking")
+	var loglevel = flag.String("loglevel", "info", "Log level for reporting")
 	var logs = flag.String("logs", "", "Where to write logs to disk")
 	var metrics = flag.String("metrics", "", "Where to write (@rcrowley go-metrics style) metrics to disk")
 	var format = flag.String("metrics-as", "plain", "Format metrics as... ? Valid options are \"json\" and \"plain\"")
 	var cors = flag.Bool("cors", false, "Enable CORS headers")
-	var verbose = flag.Bool("verbose", false, "Enable verbose logging, or log level \"info\"")
-	var verboser = flag.Bool("verboser", false, "Enable really verbose logging, or log level \"debug\"")
 
 	flag.Parse()
 	args := flag.Args()
@@ -39,16 +38,6 @@ func main() {
 
 	if os.IsNotExist(err) {
 		panic("data does not exist")
-	}
-
-	loglevel := "status"
-
-	if *verbose {
-		loglevel = "info"
-	}
-
-	if *verboser {
-		loglevel = "debug"
 	}
 
 	var l_writer io.Writer
@@ -68,7 +57,7 @@ func main() {
 	}
 
 	logger := log.NewWOFLogger("[wof-pip-server] ")
-	logger.AddLogger(l_writer, loglevel)
+	logger.AddLogger(l_writer, *loglevel)
 
 	p, p_err := pip.NewPointInPolygon(*data, *cache_size, *cache_trigger, logger)
 

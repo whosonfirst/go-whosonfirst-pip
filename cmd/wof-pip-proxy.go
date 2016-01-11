@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/whosonfirst/go-whosonfirst-log"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -68,12 +70,27 @@ func main() {
 	var host = flag.String("host", "localhost", "The hostname to listen for requests on")
 	var port = flag.Int("port", 1111, "The port number to listen for requests on")
 	var config = flag.String("config", "", "... (If the value is - then read the config from STDIN)")
-
-	// TO DO - logging...
+	var loglevel = flag.String("loglevel", "info", "Log level for reporting")
+	var logs = flag.String("logs", "", "Where to write logs to disk")
 
 	flag.Parse()
 
-	endpoint := fmt.Sprintf("%s:%d", *host, *port)
+	var l_writer io.Writer
+	l_writer = io.MultiWriter(os.Stdout)
+
+	if *logs != "" {
+
+		l_file, l_err := os.OpenFile(*logs, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0660)
+
+		if l_err != nil {
+			panic(l_err)
+		}
+
+		l_writer = io.MultiWriter(os.Stdout, l_file)
+	}
+
+	logger := log.NewWOFLogger("[wof-pip-server] ")
+	logger.AddLogger(l_writer, *loglevel)
 
 	var spec []byte
 
@@ -93,7 +110,8 @@ func main() {
 		_spec, err := ioutil.ReadFile(*config)
 
 		if err != nil {
-			panic(err)
+		       logger.Error("Failed to read %s, because %v", *config, err)
+		       os.Exit(1)
 		}
 
 		// Oh Go...
@@ -103,14 +121,15 @@ func main() {
 	targets, err := proxyHandlerTargets(spec)
 
 	if err != nil {
-		panic(err)
+	       logger.Error("Failed to parse config, because %v", err)
+	       os.Exit(1)
 	}
 
 	for t, p := range targets {
 
 		if p.Port == *port {
-			err := fmt.Sprintf("Target port (%s:%d) is the same as proxy port", t, *port)
-			panic(err)
+		   	logger.Error("Target port (%s:%d) is the same as proxy port", t, *port)
+			os.Exit(1)
 		}
 
 		/*
@@ -127,8 +146,8 @@ func main() {
 		ok, err := p.Ping()
 
 		if !ok {
-			msg := fmt.Sprintf("Target (%s:%d) is not awake or connected to the network: %v", p.Host, p.Port, err)
-			panic(msg)
+			logger.Error("Target (%s:%d) is not awake or connected to the network: %v", p.Host, p.Port, err)
+			os.Exit(1)
 		}
 
 		fmt.Println(p.Target, p.URL())
@@ -137,9 +156,11 @@ func main() {
 	handler := proxyHandlerFunc(targets)
 	proxyHandler := http.HandlerFunc(handler)
 
-	fmt.Printf("proxying requests at %s\n", endpoint)
+	endpoint := fmt.Sprintf("%s:%d", *host, *port)
+	logger.Info("proxying requests at %s\n", endpoint)
 
 	http.ListenAndServe(endpoint, proxyHandler)
+	os.Exit(0)
 }
 
 func proxyHandlerTargets(spec []byte) (WOFProxyTargets, error) {
