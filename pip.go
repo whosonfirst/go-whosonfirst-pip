@@ -430,6 +430,8 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 	wg := new(sync.WaitGroup)
 	wg.Add(len(results))
 
+	mu := new(sync.Mutex)
+
 	contained := make([]*geojson.WOFSpatial, 0)
 	// timings := make([]*WOFPointInPolygonTiming, 0)
 
@@ -476,7 +478,9 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 			// timings = append(timings, NewWOFPointInPolygonTiming(contain_event, d2))
 
 			if is_contained {
+				mu.Lock()
 				contained = append(contained, wof)
+				mu.Unlock()
 			}
 		}
 
