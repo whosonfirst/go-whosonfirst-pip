@@ -428,7 +428,21 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 	// implement but with a different syntax/pattern
 
 	wg := new(sync.WaitGroup)
-	wg.Add(len(results))
+
+	/*
+		Matt Amos [11:57]
+		wow. i just found something unexpected: when i move `wg.Add(1)` out of the loop and change it to `wg.Add(1000000)`
+		the runtime goes up from 600ms to 3s!
+
+		Aaron Cope [11:58]
+		that’s… a thing
+
+		[11:58]
+		it might also explain some lag that I’ve never been able to account for
+
+		[11:58]
+		I guess maybe Go is starting 1M “things” in the background, maybe?
+	*/
 
 	mu := new(sync.Mutex)
 
@@ -438,6 +452,8 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 	t := time.Now()
 
 	for _, wof := range results {
+
+		wg.Add(1)
 
 		wg_ensure := func(wof *geojson.WOFSpatial) {
 
@@ -453,9 +469,10 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 			is_contained := false
 
 			wg2 := new(sync.WaitGroup)
-			wg2.Add(len(polygons))
 
 			for _, poly := range polygons {
+
+				wg2.Add(1)
 
 				wg_contains := func(p *geojson.WOFPolygon, lt float64, ln float64) {
 
