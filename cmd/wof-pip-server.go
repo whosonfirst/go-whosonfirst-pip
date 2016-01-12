@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"sync"
 	"time"
 )
 
@@ -18,6 +20,7 @@ func main() {
 	var host = flag.String("host", "localhost", "The hostname to listen for requests on")
 	var port = flag.Int("port", 8080, "The port number to listen for requests on")
 	var data = flag.String("data", "", "The data directory where WOF data lives, required")
+	var cache_all = flag.Bool("cache_all", false, "Just cache everything, regardless of size")
 	var cache_size = flag.Int("cache_size", 1024, "The number of WOF records with large geometries to cache")
 	var cache_trigger = flag.Int("cache_trigger", 2000, "The minimum number of coordinates in a WOF record that will trigger caching")
 	var strict = flag.Bool("strict", false, "Enable strict placetype checking")
@@ -58,6 +61,48 @@ func main() {
 
 	logger := log.NewWOFLogger("[wof-pip-server] ")
 	logger.AddLogger(l_writer, *loglevel)
+
+	if *cache_all {
+
+		*cache_size = 0
+		*cache_trigger = 1
+
+		mu := new(sync.Mutex)
+		wg := new(sync.WaitGroup)
+
+		for _, path := range args {
+
+			wg.Add(1)
+
+			go func(path string) {
+				defer wg.Done()
+
+				count := 0
+
+				fh, err := os.Open(path)
+
+				if err != nil {
+					logger.Error("failed to open %s for reading, because %v", path, err)
+					os.Exit(1)
+				}
+
+				scanner := bufio.NewScanner(fh)
+
+				for scanner.Scan() {
+					count += 1
+				}
+
+				mu.Lock()
+				*cache_size += count
+				mu.Unlock()
+
+			}(path)
+		}
+
+		wg.Wait()
+
+		logger.Status("set cache_size to %d and cache_trigger to %d", *cache_size, *cache_trigger)
+	}
 
 	p, p_err := pip.NewPointInPolygon(*data, *cache_size, *cache_trigger, logger)
 

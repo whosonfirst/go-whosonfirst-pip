@@ -110,8 +110,8 @@ func main() {
 		_spec, err := ioutil.ReadFile(*config)
 
 		if err != nil {
-		       logger.Error("Failed to read %s, because %v", *config, err)
-		       os.Exit(1)
+			logger.Error("Failed to read %s, because %v", *config, err)
+			os.Exit(1)
 		}
 
 		// Oh Go...
@@ -121,14 +121,14 @@ func main() {
 	targets, err := proxyHandlerTargets(spec)
 
 	if err != nil {
-	       logger.Error("Failed to parse config, because %v", err)
-	       os.Exit(1)
+		logger.Error("Failed to parse config, because %v", err)
+		os.Exit(1)
 	}
 
 	for t, p := range targets {
 
 		if p.Port == *port {
-		   	logger.Error("Target port (%s:%d) is the same as proxy port", t, *port)
+			logger.Error("Target port (%s:%d) is the same as proxy port", t, *port)
 			os.Exit(1)
 		}
 
