@@ -494,6 +494,19 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 			// contain_event := fmt.Sprintf("contain %d (%d/%d iterations, %d points)", id, iters, count, points)
 			// timings = append(timings, NewWOFPointInPolygonTiming(contain_event, d2))
 
+			/*
+
+				See this? This is important. Specifically the part where we are locking
+				updates to the 'contained' array. Which makes total sense obviously except
+				for the part where I completely spaced on this (despite all the chatter and
+				error checking around the waitgroups aboves...) and hilarity inevitably
+				ensued. So you know, don't do what I did... (20160112/thisisaaronland)
+
+				https://github.com/whosonfirst/go-whosonfirst-pip/commit/986e527dbe9e62915757489db7c70d5140c53629
+				https://github.com/whosonfirst/go-whosonfirst-pip/issues/15
+				https://github.com/whosonfirst/go-whosonfirst-pip/issues/18
+			*/
+
 			if is_contained {
 				mu.Lock()
 				contained = append(contained, wof)
@@ -513,21 +526,6 @@ func (p WOFPointInPolygon) EnsureContained(lat float64, lon float64, results []*
 	var tm metrics.Timer
 	tm = *p.Metrics.TimeToContain
 	go tm.Update(d)
-
-	// there is a weird thing happening here that I don't entirely understand
-	// It *looks* like some part of the for loops or the waitgroup scaffolding
-	// is adding 0.1 to 0.3 seconds to the total processing time which sounds
-	// insane, I know. All I can say is that the sum of all the timings above
-	// for each result always seem to be less than 'ttc' below. So confused...
-	// (20151020/thisisaaronland)
-
-	/*
-		ttc := float64(d) / 1e9
-
-		if ttc > 0.4 {
-			p.Logger.Warning("time to contains exceeds threshold of 0.4 seconds: %f", ttc)
-		}
-	*/
 
 	return contained, d
 }
