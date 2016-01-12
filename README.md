@@ -517,6 +517,7 @@ First, these should not be confused with malformed GeoJSON files. Some records i
 
 ## See also
 
+* https://github.com/whosonfirst/chef-wof_pip
 * https://www.github.com/dhconnelly/rtreego
 * https://github.com/hashicorp/golang-lru
 * https://github.com/rcrowley/go-metrics
