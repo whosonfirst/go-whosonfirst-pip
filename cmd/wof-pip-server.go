@@ -222,5 +222,12 @@ func main() {
 	endpoint := fmt.Sprintf("%s:%d", *host, *port)
 
 	http.HandleFunc("/", handler)
-	http.ListenAndServe(endpoint, nil)
+	err = http.ListenAndServe(endpoint, nil)
+
+	if err != nil {
+	       logger.Error("failed to start server, because %v", err)
+	       os.Exit(1)
+	}
+
+	os.Exit(0)
 }
