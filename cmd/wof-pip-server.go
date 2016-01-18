@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"runtime"
 	"strconv"
 	"sync"
 	"time"
@@ -29,6 +30,7 @@ func main() {
 	var metrics = flag.String("metrics", "", "Where to write (@rcrowley go-metrics style) metrics to disk")
 	var format = flag.String("metrics-as", "plain", "Format metrics as... ? Valid options are \"json\" and \"plain\"")
 	var cors = flag.Bool("cors", false, "Enable CORS headers")
+	var procs = flag.Int("procs", (runtime.NumCPU() * 2), "The number of concurrent processes to clone data with")
 
 	flag.Parse()
 	args := flag.Args()
@@ -42,6 +44,8 @@ func main() {
 	if os.IsNotExist(err) {
 		panic("data does not exist")
 	}
+
+	runtime.GOMAXPROCS(*procs)
 
 	var l_writer io.Writer
 	var m_writer io.Writer
@@ -225,8 +229,8 @@ func main() {
 	err = http.ListenAndServe(endpoint, nil)
 
 	if err != nil {
-	       logger.Error("failed to start server, because %v", err)
-	       os.Exit(1)
+		logger.Error("failed to start server, because %v", err)
+		os.Exit(1)
 	}
 
 	os.Exit(0)
