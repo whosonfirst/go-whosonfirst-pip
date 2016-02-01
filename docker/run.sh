@@ -22,7 +22,7 @@ cd ${INSTALLDIR}
 ./bin/wof-pip-server \
   -strict \
   -loglevel info \
-  -host 0.0.0.0 \
-  -port 9999 \
+  -host ${HOST} \
+  -port ${PORT} \
   -cache_all \
   -data ${DATADIR} ${METADIR}/${csv}
