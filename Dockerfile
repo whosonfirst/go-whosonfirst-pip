@@ -17,7 +17,6 @@ RUN mkdir ${INSTALLDIR}
 RUN mkdir ${DATADIR}
 RUN mkdir ${METADIR}
 WORKDIR ${INSTALLDIR}
-COPY ./docker/download_data.sh ${WORKDIR}
 COPY ./docker/run.sh ${WORKDIR}
 ADD . ${INSTALLDIR}
 
@@ -27,13 +26,5 @@ RUN apt-get install build-essential -y
 
 RUN make deps
 RUN make bin
-
-# data
-RUN ./download_data.sh
-
-# chown and start
-RUN chown -R 9999:9999 ${DATADIR}
-RUN chown -R 9999:9999 ${INSTALLDIR}
-USER 9999
 
 CMD ./run.sh
