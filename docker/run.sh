@@ -5,7 +5,6 @@ for f in ${METAFILES}; do
   csv="${f}.csv "
 done
 
-echo ${csv}
 ./bin/wof-pip-server \
   -strict \
   -loglevel info \
