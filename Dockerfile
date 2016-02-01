@@ -5,7 +5,7 @@ ENV ENVIRONMENT ${ENVIRONMENT:-development}
 ENV INSTALLDIR  ${INSTALLDIR:-/wof}
 ENV DATADIR     ${DATADIR:-/data}
 ENV METADIR     ${METADIR:-/meta}
-ENV METAFILES   ${METAFILES:-"wof-country-latest wof-locality-latest wof-county-latest wof-localadmin-latest wof-neighborhood-latest wof-region-latest"}
+ENV METAFILES   ${METAFILES:-"wof-country-latest"}
 ENV METAURL     ${METAURL:-"https://raw.githubusercontent.com/whosonfirst/whosonfirst-data/master/meta"}
 ENV SOURCEURL   ${SOURCEURL:-"http://s3.amazonaws.com/whosonfirst.mapzen.com"}
 ENV START_CMD   ${SOURCEURL:-"http://s3.amazonaws.com/whosonfirst.mapzen.com"}
