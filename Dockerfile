@@ -8,6 +8,7 @@ ENV METADIR     ${METADIR:-/meta}
 ENV METAFILES   ${METAFILES:-"wof-country-latest"}
 ENV METAURL     ${METAURL:-"https://raw.githubusercontent.com/whosonfirst/whosonfirst-data/master/meta"}
 ENV SOURCEURL   ${SOURCEURL:-"http://s3.amazonaws.com/whosonfirst.mapzen.com"}
+ENV UPDATEDATA  ${UPDATEDATA:-"false"}
 ENV HOST        ${HOST:-"localhost"}
 ENV PORT        ${PORT:-"9999"}
 
