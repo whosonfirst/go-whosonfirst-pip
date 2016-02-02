@@ -15,15 +15,14 @@ EXPOSE ${PORT}
 
 # setup
 RUN mkdir ${INSTALLDIR}
-RUN mkdir ${DATADIR}
 RUN mkdir ${METADIR}
+VOLUME ["${DATADIR}"]
 WORKDIR ${INSTALLDIR}
 COPY ./docker/run.sh ${WORKDIR}
 ADD . ${INSTALLDIR}
 
 # build
-RUN apt-get update -y
-RUN apt-get install build-essential -y
+RUN apt-get update -y && apt-get install build-essential -y
 
 RUN make deps
 RUN make bin
