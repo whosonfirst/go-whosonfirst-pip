@@ -15,7 +15,7 @@ for f in ${METAFILES}; do
   wget --quiet -O ${f}.tar.bz2 ${SOURCEURL}/bundles/${f}-bundle.tar.bz2
 
   echo -e "\t...extracting data..."
-  bunzip2 ${f}.tar.bz2 && tar xf ${f}.tar --strip-components=2 && rm ${f}.tar
+  bunzip2 -f ${f}.tar.bz2 && tar xf ${f}.tar --strip-components=2 && rm ${f}.tar
 done
 
 cd ${INSTALLDIR}
