@@ -6,8 +6,8 @@ for f in ${METAFILES}; do
   # download data
   echo "Now working on ${f}:"
 
-  if [ -f "${METADIR}/${f}.csv" ]; then
-    echo -e "\t...metadata already exists, skipping..."
+  if [ -f "${DATADIR}/${f}.tar" ]; then
+    echo -e "\t...data exists, skipping..."
   else
     cd ${METADIR}
     echo -e "\t...pulling metadata..."
@@ -18,7 +18,7 @@ for f in ${METAFILES}; do
     wget --quiet -O ${f}.tar.bz2 ${SOURCEURL}/bundles/${f}-bundle.tar.bz2
 
     echo -e "\t...extracting data..."
-    bunzip2 -f ${f}.tar.bz2 && tar xf ${f}.tar --strip-components=2 && rm ${f}.tar
+    bunzip2 -f ${f}.tar.bz2 && tar xf ${f}.tar --strip-components=2
   fi
 done
 
