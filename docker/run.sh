@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 for f in ${METAFILES}; do
   # construct the metafile args
-  csv="${f}.csv "
+  csv="${METADIR}/${f}.csv ${csv}"
 
   # download data
   echo "Now working on ${f}:"
@@ -25,4 +25,4 @@ cd ${INSTALLDIR}
   -host ${HOST} \
   -port ${PORT} \
   -cache_all \
-  -data ${DATADIR} ${METADIR}/${csv}
+  -data ${DATADIR} ${csv}
