@@ -5,7 +5,7 @@ ENV ENVIRONMENT ${ENVIRONMENT:-development}
 ENV INSTALLDIR  ${INSTALLDIR:-/wof}
 ENV DATADIR     ${DATADIR:-/data}
 ENV METADIR     ${METADIR:-/meta}
-ENV METAFILES   ${METAFILES:-"wof-country-latest"} # include minimal data as default
+ENV METAFILES   ${METAFILES:-"wof-country-latest"}
 ENV METAURL     ${METAURL:-"https://raw.githubusercontent.com/whosonfirst/whosonfirst-data/master/meta"}
 ENV SOURCEURL   ${SOURCEURL:-"http://s3.amazonaws.com/whosonfirst.mapzen.com"}
 ENV HOST        ${HOST:-"localhost"}
@@ -16,7 +16,7 @@ EXPOSE ${PORT}
 # setup
 RUN mkdir ${INSTALLDIR}
 RUN mkdir ${METADIR}
-VOLUME ["${DATADIR}"]
+RUN mkdir ${DATADIR}
 WORKDIR ${INSTALLDIR}
 COPY ./docker/run.sh ${WORKDIR}
 ADD . ${INSTALLDIR}
