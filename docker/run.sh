@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
+
 for f in ${METAFILES}; do
-  # construct the metafile args
+  # construct the metafile args that
+  #   will be passed to the service.
   csv="${METADIR}/${f}.csv ${csv}"
 
   # download data
