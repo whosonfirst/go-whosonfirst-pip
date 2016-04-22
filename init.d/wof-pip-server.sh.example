@@ -41,23 +41,35 @@ case $1 in
         ;;
     start)
 
-    if [ -e "${PID_FILE}" ]; then
+    if [ -e "${PID_FILE}" ]
+    then
+
+	PID=`cat ${PID_FILE}`
+
+	PID_COUNT=`ps -p ${PID} | grep ${PID} | wc -l`
+
+	if [ ${PID_COUNT}==0 ]
+	then
+	    rm ${PID_FILE}
+	else   
             echo "Error! ${PID_NAME} is currently running!" 1>&2
             exit 1
-	    fi
+	fi
 
-        echo "Starting ${PID_NAME} w/ options: ${PIP_ARGS}"
-        PID=`exec sudo -u $PIP_USER $PIP_DAEMON $PIP_ARGS  > /dev/null 2>&1 & echo $!`
+    fi
+    
+    echo "Starting ${PID_NAME} w/ options: ${PIP_ARGS}"
+    PID=`exec sudo -u $PIP_USER $PIP_DAEMON $PIP_ARGS  > /dev/null 2>&1 & echo $!`
+    
+    if [ -z $PID ]; then
+        printf "%s\n" "Fail"
+    else
+        echo $PID > $PID_FILE
+        printf "%s\n" "Ok"
+	echo $PID
+    fi
 
-        if [ -z $PID ]; then
-            printf "%s\n" "Fail"
-        else
-            echo $PID > $PID_FILE
-            printf "%s\n" "Ok"
-	        echo $PID
-        fi
-
-        ;;
+    ;;
     stop)
 
     printf "%-50s" "Stopping $PID_NAME"
