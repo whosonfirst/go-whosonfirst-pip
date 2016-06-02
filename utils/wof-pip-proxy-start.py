@@ -91,11 +91,27 @@ if __name__ == '__main__':
 
     for target in spec:
 
+        # https://github.com/whosonfirst/go-whosonfirst-pip/issues/26
+
+        pid_dirname = "/var/run"
+        pid_basename = "wof-pip-proxy-%s.pid" % target
+
+        pid_file = os.path.join(pid_dirname, pid_basename)
+
+        # PID=`cat /var/run/foo.pid`
+        # ps h -p ${PID} | wc -l
+
         cmd = [ pip_server, "-cors", "-port", str(target['Port']), "-data", options.data, target['Meta'] ]
         logging.debug(cmd)
 
         proc = subprocess.Popen(cmd)
         procs.append(proc)
+
+        pid = proc.pid
+
+        fh = open(pid_file, "w")
+        fh.write(proc.pid)
+        fh.close()
 
     # Wait for the PIP servers to finish indexing
 
