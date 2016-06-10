@@ -230,7 +230,7 @@ func (p WOFPointInPolygon) IndexSpatialFeature(spatial *geojson.WOFSpatial) erro
 
 func (p WOFPointInPolygon) IndexMetaFile(csv_file string) error {
 
-	reader, reader_err := csv.NewDictReader(csv_file)
+	reader, reader_err := csv.NewDictReaderFromPath(csv_file)
 
 	if reader_err != nil {
 		p.Logger.Error("failed to create CSV reader , because %s", reader_err)
