@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+# THERE IS A REAL CHANCE THIS WILL BE MOVED IN TO py-mapzen-whosonfirst-pip-proxy
+# BUT THAT DAY IS NOT TODAY (20160616/thisisaaronland)
+
 import sys
 import os
 import subprocess
@@ -7,20 +10,8 @@ import logging
 import json
 import signal
 import time
-import urllib2
 
-def ping(url):
-
-    req = urllib2.Request(url)
-    req.get_method = lambda : 'HEAD'
-
-    try:
-        urllib2.urlopen(req)
-        return True
-    except urllib2.HTTPError, e:
-        return True
-    except Exception, e:
-        return False
+import mapzen.whosonfirst.pip.proxy
 
 if __name__ == '__main__':
 
@@ -89,52 +80,21 @@ if __name__ == '__main__':
 
     # Start all the PIP servers
 
+    pip = mapzen.whosonfirst.pip.proxy.servers(options.proxy_config)
+
     for target in spec:
 
-        # https://github.com/whosonfirst/go-whosonfirst-pip/issues/26
+        pt = target['Target']
 
-        pid_dirname = "/var/run"
-        pid_basename = "wof-pip-proxy-%s.pid" % target
-
-        pid_file = os.path.join(pid_dirname, pid_basename)
-
-        # PID=`cat /var/run/foo.pid`
-        # ps h -p ${PID} | wc -l
-
-        cmd = [ pip_server, "-cors", "-port", str(target['Port']), "-data", options.data, target['Meta'] ]
-        logging.debug(cmd)
-
-        proc = subprocess.Popen(cmd)
+        proc = pip.start_server(pt, pip_server=pip_server, data=options.data)
         procs.append(proc)
-
-        pid = proc.pid
-
-        fh = open(pid_file, "w")
-        fh.write(proc.pid)
-        fh.close()
 
     # Wait for the PIP servers to finish indexing
 
-    while True:
-        
-        pending = False
-
-        for target in spec:
-
-            url = "http://localhost:%s" % target['Port']
-            logging.debug("ping %s" % url)
-
-            if not ping(url):
-                logging.info("ping for %s failed, waiting" % url)
-                pending = True
-
-        if not pending:
-            break
-
-        logging.info("pause...")
-        time.sleep(1)
+    pip.wait_for_godot()
 
     # Now start the proxy server
+    # Maybe move this in mapzen.whosonfirst.pip.proxy ? (20160616/thisisaaronland)
 
     cmd = [ proxy_server, "-host", options.proxy_host, "-port", options.proxy_port, "-config", options.proxy_config ]
     logging.debug(cmd)
