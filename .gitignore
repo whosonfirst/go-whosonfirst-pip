@@ -1,8 +1,8 @@
 *~
 pkg
 src
-bin/index
-bin/index-csv
-bin/pip-server
+!vendor/src
+bin
+!bin/.gitignore
 *.log
 *.json
