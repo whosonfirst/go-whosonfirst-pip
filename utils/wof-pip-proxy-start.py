@@ -8,6 +8,7 @@ import json
 import signal
 import time
 import urllib2
+import tempfile
 
 def ping(url):
 
@@ -93,8 +94,11 @@ if __name__ == '__main__':
 
         # https://github.com/whosonfirst/go-whosonfirst-pip/issues/26
 
-        pid_dirname = "/var/run"
-        pid_basename = "wof-pip-proxy-%s.pid" % target
+        # because this typically gets invoked as user 'www-data'
+        # pid_dirname = "/var/run"
+
+        pid_dirname = tempfile.gettempdir()
+        pid_basename = "wof-pip-proxy-%s.pid" % target['Target']
 
         pid_file = os.path.join(pid_dirname, pid_basename)
 
@@ -108,9 +112,10 @@ if __name__ == '__main__':
         procs.append(proc)
 
         pid = proc.pid
+        logging.info("start %s pip server with PID %s" % (target['Target'], pid))
 
         fh = open(pid_file, "w")
-        fh.write(proc.pid)
+        fh.write(str(pid))
         fh.close()
 
     # Wait for the PIP servers to finish indexing
