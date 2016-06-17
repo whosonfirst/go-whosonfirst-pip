@@ -188,7 +188,7 @@ Usage of ./bin/wof-pip-server:
 
 #### wof-pip-proxy
 
-_Before you get started: You will need to install [py-mapzen-whosonfirst-pip-proxy](https://github.com/whosonfirst/py-mapzen-whosonfirst-pip-proxy) before any of this will work. It is likely that the tools described below will eventually be bundled with that package but this has not happened yet._
+_Before you get started: You will need to install [py-mapzen-whosonfirst-pip-server](https://github.com/whosonfirst/py-mapzen-whosonfirst-pip-server) before any of this will work. It is likely that the tools described below will eventually be bundled with that package but this has not happened yet._
 
 This is another HTTP pony that proxies requests to multiple instances of `wof-pip-server` routing the requests to multiple, separate URL paths on a single host. This is largely a convenience so that other parts of your code don't need to remember (or even think about) what port a given PIP server is running on. You would run it like this:
 

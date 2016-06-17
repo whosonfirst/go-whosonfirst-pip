@@ -11,7 +11,7 @@ import json
 import signal
 import time
 
-import mapzen.whosonfirst.pip.proxy
+import mapzen.whosonfirst.pip.server
 
 if __name__ == '__main__':
 
@@ -80,7 +80,7 @@ if __name__ == '__main__':
 
     # Start all the PIP servers
 
-    pip = mapzen.whosonfirst.pip.proxy.servers(options.proxy_config)
+    pip = mapzen.whosonfirst.pip.server.pip_servers(options.proxy_config)
 
     for target in spec:
 
