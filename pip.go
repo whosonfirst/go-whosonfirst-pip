@@ -192,17 +192,34 @@ func (p WOFPointInPolygon) IndexGeoJSONFile(path string) error {
 
 func (p WOFPointInPolygon) IndexGeoJSONFeature(feature *geojson.WOFFeature) error {
 
+	body := feature.Body()
+
+	geom_type, ok := body.Path("geometry.type").Data().(string)
+
+	if ok && geom_type == "Point" {
+		p.Logger.Warning("feature is a Point type so I am ignoring it...")
+		return nil
+	}
+
+	deprecated, ok := body.Path("properties.edtf:deprecated").Data().(string)
+
+	/*
+		This is a little bit of WOF leaking in to things. Maybe it is worth adding
+		and IsDeprecated method to the interface for wof-geojson? Dunno yet...
+		(20160722/thisisaaronland)
+	*/
+
+	if ok && deprecated != "" && deprecated != "u" && deprecated != "uuuu" {
+
+		id := feature.Id()
+
+		p.Logger.Warning("feature %d is deprecated (%s) so I am ignoring it...", id, deprecated)
+		return nil
+	}
+
 	spatial, spatial_err := feature.EnSpatialize()
 
 	if spatial_err != nil {
-
-		body := feature.Body()
-		geom_type, ok := body.Path("geometry.type").Data().(string)
-
-		if ok && geom_type == "Point" {
-			p.Logger.Warning("feature is a Point type so I am ignoring it...")
-			return nil
-		}
 
 		p.Logger.Error("failed to enspatialize feature, because %s", spatial_err)
 		return spatial_err
