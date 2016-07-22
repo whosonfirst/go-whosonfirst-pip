@@ -147,6 +147,7 @@ func main() {
 		str_lat := query.Get("latitude")
 		str_lon := query.Get("longitude")
 		placetype := query.Get("placetype")
+		excluded := query["exclude"] // see the way we're accessing the map directly to get a list? yeah, that
 
 		if str_lat == "" {
 			http.Error(rsp, "Missing latitude parameter", http.StatusBadRequest)
@@ -181,15 +182,26 @@ func main() {
 			return
 		}
 
+		filters := pip.WOFPointInPolygonFilters{}
+
 		if placetype != "" {
 
 			if *strict && !p.IsKnownPlacetype(placetype) {
 				http.Error(rsp, "Unknown placetype", http.StatusBadRequest)
 				return
 			}
+
+			filters["placetype"] = placetype
 		}
 
-		results, timings := p.GetByLatLonForPlacetype(lat, lon, placetype)
+		for _, what := range excluded {
+
+			if what == "deprecated" || what == "superseded" {
+				filters[what] = false
+			}
+		}
+
+		results, timings := p.GetByLatLonFiltered(lat, lon, filters)
 
 		count := len(results)
 		ttp := 0.0

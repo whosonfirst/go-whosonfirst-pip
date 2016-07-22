@@ -31,6 +31,8 @@ type WOFPointInPolygonMetrics struct {
 	TimeToProcess   *metrics.Timer
 }
 
+type WOFPointInPolygonFilters map[string]interface{} // these get expanded in func (p WOFPointInPolygon) Filter
+
 func NewPointInPolygonMetrics() *WOFPointInPolygonMetrics {
 
 	registry := metrics.NewRegistry()
@@ -201,21 +203,27 @@ func (p WOFPointInPolygon) IndexGeoJSONFeature(feature *geojson.WOFFeature) erro
 		return nil
 	}
 
-	deprecated, ok := body.Path("properties.edtf:deprecated").Data().(string)
-
 	/*
-		This is a little bit of WOF leaking in to things. Maybe it is worth adding
-		and IsDeprecated method to the interface for wof-geojson? Dunno yet...
-		(20160722/thisisaaronland)
+		deprecated, ok := body.Path("properties.edtf:deprecated").Data().(string)
+
+		if ok && deprecated != "" && deprecated != "u" && deprecated != "uuuu" {
+
+			id := feature.Id()
+
+			p.Logger.Warning("feature %d is deprecated (%s) so I am ignoring it...", id, deprecated)
+			return nil
+		}
+
+		superseded, ok := body.Path("properties.edtf:superseded").Data().(string)
+
+		if ok && superseded != "" && superseded != "u" && superseded != "uuuu" {
+
+			id := feature.Id()
+
+			p.Logger.Warning("feature %d is superseded (%s) so I am ignoring it...", id, superseded)
+			return nil
+		}
 	*/
-
-	if ok && deprecated != "" && deprecated != "u" && deprecated != "uuuu" {
-
-		id := feature.Id()
-
-		p.Logger.Warning("feature %d is deprecated (%s) so I am ignoring it...", id, deprecated)
-		return nil
-	}
 
 	spatial, spatial_err := feature.EnSpatialize()
 
@@ -361,11 +369,21 @@ func (p WOFPointInPolygon) InflateSpatialResults(results []rtreego.Spatial) ([]*
 
 func (p WOFPointInPolygon) GetByLatLon(lat float64, lon float64) ([]*geojson.WOFSpatial, []*WOFPointInPolygonTiming) {
 
-	// See that: placetype == ""; see below for details
-	return p.GetByLatLonForPlacetype(lat, lon, "")
+	filters := WOFPointInPolygonFilters{}
+	return p.GetByLatLonFiltered(lat, lon, filters)
 }
 
+// deprecated – just use GetByLatLonFiltered (20160722/thisisaaronland)
+
 func (p WOFPointInPolygon) GetByLatLonForPlacetype(lat float64, lon float64, placetype string) ([]*geojson.WOFSpatial, []*WOFPointInPolygonTiming) {
+
+	filters := WOFPointInPolygonFilters{}
+	filters["placetype"] = placetype
+
+	return p.GetByLatLonFiltered(lat, lon, filters)
+}
+
+func (p WOFPointInPolygon) GetByLatLonFiltered(lat float64, lon float64, filters WOFPointInPolygonFilters) ([]*geojson.WOFSpatial, []*WOFPointInPolygonTiming) {
 
 	var c metrics.Counter
 	c = *p.Metrics.CountLookups
@@ -385,14 +403,8 @@ func (p WOFPointInPolygon) GetByLatLonForPlacetype(lat float64, lon float64, pla
 	// do a final point-in-poly lookup so we don't try to load country
 	// records while only searching for localities
 
-	filtered := make([]*geojson.WOFSpatial, 0)
-
-	if placetype != "" {
-		filtered, duration = p.FilterByPlacetype(inflated, placetype)
-		timings = append(timings, NewWOFPointInPolygonTiming("filter", duration))
-	} else {
-		filtered = inflated
-	}
+	filtered, duration := p.Filter(inflated, filters)
+	timings = append(timings, NewWOFPointInPolygonTiming("filter", duration))
 
 	contained, duration := p.EnsureContained(lat, lon, filtered)
 	timings = append(timings, NewWOFPointInPolygonTiming("contain", duration))
@@ -406,7 +418,7 @@ func (p WOFPointInPolygon) GetByLatLonForPlacetype(lat float64, lon float64, pla
 	ttp := float64(d) / 1e9
 
 	if ttp > 0.5 {
-		p.Logger.Warning("time to process %f,%f (%s) exceeds 0.5 seconds: %f", lat, lon, placetype, ttp)
+		p.Logger.Warning("time to process %f,%f (%v) exceeds 0.5 seconds: %f", lat, lon, filters, ttp)
 
 		for _, t := range timings {
 			p.Logger.Info("[%s] %f", t.Event, t.Duration)
@@ -416,16 +428,46 @@ func (p WOFPointInPolygon) GetByLatLonForPlacetype(lat float64, lon float64, pla
 	return contained, timings
 }
 
+// deprecated - just use Filter (20160722/thisisaaronland)
+
 func (p WOFPointInPolygon) FilterByPlacetype(results []*geojson.WOFSpatial, placetype string) ([]*geojson.WOFSpatial, time.Duration) {
+
+	filters := WOFPointInPolygonFilters{}
+	filters["placetype"] = placetype
+
+	return p.Filter(results, filters)
+}
+
+func (p WOFPointInPolygon) Filter(results []*geojson.WOFSpatial, filters WOFPointInPolygonFilters) ([]*geojson.WOFSpatial, time.Duration) {
 
 	t := time.Now()
 
 	filtered := make([]*geojson.WOFSpatial, 0)
 
 	for _, r := range results {
-		if r.Placetype == placetype {
-			filtered = append(filtered, r)
+
+		pt, ok := filters["placetype"]
+
+		if ok && pt.(string) != r.Placetype {
+			p.Logger.Debug("placetype filter failed %s %s", pt, r.Placetype)
+			continue
 		}
+
+		deprecated, ok := filters["deprecated"]
+
+		if ok && deprecated.(bool) != r.Deprecated {
+			p.Logger.Warning("deprecated filter failed %t %t", deprecated, r.Deprecated)
+			continue
+		}
+
+		superseded, ok := filters["superseded"]
+
+		if ok && superseded.(bool) != r.Superseded {
+			p.Logger.Warning("superseded filter failed %t %t", superseded, r.Superseded)
+			continue
+		}
+
+		filtered = append(filtered, r)
 	}
 
 	d := time.Since(t)

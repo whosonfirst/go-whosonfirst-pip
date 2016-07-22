@@ -27,11 +27,13 @@ import (
 // (201251207/thisisaaronland)
 
 type WOFSpatial struct {
-	bounds    *rtreego.Rect
-	Id        int
-	Name      string
-	Placetype string
-	Offset    int // used when calling EnSpatializeGeom in order to know which polygon we care about
+	bounds     *rtreego.Rect
+	Id         int
+	Name       string
+	Placetype  string
+	Offset     int // used when calling EnSpatializeGeom in order to know which polygon we care about
+	Deprecated bool
+	Superseded bool
 }
 
 // sudo make me an interface
@@ -222,6 +224,40 @@ func (wof WOFFeature) Placetype() string {
 	return "here be dragons"
 }
 
+func (wof WOFFeature) Deprecated() bool {
+
+	path := "edtf:deprecated"
+
+	d, ok := wof.StringProperty(path)
+
+	if ok && d != "" && d != "u" && d != "uuuu" {
+		return true
+	}
+
+	return false
+}
+
+func (wof WOFFeature) Superseded() bool {
+
+	path := "edtf:superseded"
+
+	d, ok := wof.StringProperty(path)
+
+	if ok && d != "" && d != "u" && d != "uuuu" {
+		return true
+	}
+
+     	body := wof.Body()
+
+	pointers := body.Path("properties.wof:superseded_by").Data()
+
+	if len(pointers.([]interface{})) != 0 {
+		return true
+	}
+
+	return false
+}
+
 func (wof WOFFeature) placetype(path string) (string, bool) {
 
 	return wof.StringValue(path)
@@ -252,6 +288,8 @@ func (wof WOFFeature) EnSpatialize() (*WOFSpatial, error) {
 	id := wof.Id()
 	name := wof.Name()
 	placetype := wof.Placetype()
+	deprecated := wof.Deprecated()
+	superseded := wof.Superseded()
 
 	body := wof.Body()
 
@@ -286,7 +324,7 @@ func (wof WOFFeature) EnSpatialize() (*WOFSpatial, error) {
 		return nil, err
 	}
 
-	return &WOFSpatial{rect, id, name, placetype, -1}, nil
+	return &WOFSpatial{rect, id, name, placetype, -1, deprecated, superseded}, nil
 }
 
 // sudo make me a package function and accept an interface
@@ -297,6 +335,8 @@ func (wof WOFFeature) EnSpatializeGeom() ([]*WOFSpatial, error) {
 	id := wof.Id()
 	name := wof.Name()
 	placetype := wof.Placetype()
+	deprecated := wof.Deprecated()
+	superseded := wof.Superseded()
 
 	spatial := make([]*WOFSpatial, 0)
 	polygons := wof.GeomToPolygons()
@@ -342,7 +382,7 @@ func (wof WOFFeature) EnSpatializeGeom() ([]*WOFSpatial, error) {
 			return nil, err
 		}
 
-		sp := WOFSpatial{rect, id, name, placetype, offset}
+		sp := WOFSpatial{rect, id, name, placetype, offset, deprecated, superseded}
 		spatial = append(spatial, &sp)
 	}
 

@@ -51,7 +51,10 @@ func main() {
 
 	fmt.Println("filter results by locality")
 
-	filtered, _ := p.FilterByPlacetype(inflated, "locality")
+	filters := pip.WOFPointInPolygonFilters{}
+	filters["placetype"] = "locality"
+
+	filtered, _ := p.Filter(inflated, filters)
 
 	for i, f := range filtered {
 		fmt.Printf("filtered result #%d is %s\n", i, f.Name)
