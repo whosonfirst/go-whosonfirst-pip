@@ -203,28 +203,6 @@ func (p WOFPointInPolygon) IndexGeoJSONFeature(feature *geojson.WOFFeature) erro
 		return nil
 	}
 
-	/*
-		deprecated, ok := body.Path("properties.edtf:deprecated").Data().(string)
-
-		if ok && deprecated != "" && deprecated != "u" && deprecated != "uuuu" {
-
-			id := feature.Id()
-
-			p.Logger.Warning("feature %d is deprecated (%s) so I am ignoring it...", id, deprecated)
-			return nil
-		}
-
-		superseded, ok := body.Path("properties.edtf:superseded").Data().(string)
-
-		if ok && superseded != "" && superseded != "u" && superseded != "uuuu" {
-
-			id := feature.Id()
-
-			p.Logger.Warning("feature %d is superseded (%s) so I am ignoring it...", id, superseded)
-			return nil
-		}
-	*/
-
 	spatial, spatial_err := feature.EnSpatialize()
 
 	if spatial_err != nil {
@@ -377,6 +355,8 @@ func (p WOFPointInPolygon) GetByLatLon(lat float64, lon float64) ([]*geojson.WOF
 
 func (p WOFPointInPolygon) GetByLatLonForPlacetype(lat float64, lon float64, placetype string) ([]*geojson.WOFSpatial, []*WOFPointInPolygonTiming) {
 
+	p.Logger.Warning("WOFPointInPolygon.GetByLatLonForPlacetype is deprecated, please user WOFPointInPolygon.GetByLatLonFiltered instead")
+
 	filters := WOFPointInPolygonFilters{}
 	filters["placetype"] = placetype
 
@@ -432,6 +412,8 @@ func (p WOFPointInPolygon) GetByLatLonFiltered(lat float64, lon float64, filters
 
 func (p WOFPointInPolygon) FilterByPlacetype(results []*geojson.WOFSpatial, placetype string) ([]*geojson.WOFSpatial, time.Duration) {
 
+	p.Logger.Warning("WOFPointInPolygon.FilterByPlacetype is deprecated, please user WOFPointInPolygon.Filter instead")
+
 	filters := WOFPointInPolygonFilters{}
 	filters["placetype"] = placetype
 
@@ -449,21 +431,21 @@ func (p WOFPointInPolygon) Filter(results []*geojson.WOFSpatial, filters WOFPoin
 		pt, ok := filters["placetype"]
 
 		if ok && pt.(string) != r.Placetype {
-			p.Logger.Debug("placetype filter failed %s %s", pt, r.Placetype)
+			p.Logger.Debug("placetype filter failed, expected '%s' but got '%s'", pt, r.Placetype)
 			continue
 		}
 
 		deprecated, ok := filters["deprecated"]
 
 		if ok && deprecated.(bool) != r.Deprecated {
-			p.Logger.Warning("deprecated filter failed %t %t", deprecated, r.Deprecated)
+			p.Logger.Debug("deprecated filter failed, expected %t but got %t", deprecated, r.Deprecated)
 			continue
 		}
 
 		superseded, ok := filters["superseded"]
 
 		if ok && superseded.(bool) != r.Superseded {
-			p.Logger.Warning("superseded filter failed %t %t", superseded, r.Superseded)
+			p.Logger.Debug("superseded filter failed, expected %t but got %t", superseded, r.Superseded)
 			continue
 		}
 
