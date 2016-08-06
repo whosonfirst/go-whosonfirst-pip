@@ -22,6 +22,7 @@ deps:   self
 	@GOPATH=$(GOPATH) go get -u "github.com/dhconnelly/rtreego"
 	@GOPATH=$(GOPATH) go get -u "github.com/hashicorp/golang-lru"
 	@GOPATH=$(GOPATH) go get -u "github.com/rcrowley/go-metrics"
+	@GOPATH=$(GOPATH) go get -u "github.com/facebookgo/grace/gracehttp"
 
 vendor: rmdeps deps
 	if test ! -d vendor; then mkdir vendor; fi

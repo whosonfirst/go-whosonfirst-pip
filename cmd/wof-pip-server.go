@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/facebookgo/grace/gracehttp"
 	log "github.com/whosonfirst/go-whosonfirst-log"
 	pip "github.com/whosonfirst/go-whosonfirst-pip"
 	"io"
@@ -237,13 +238,20 @@ func main() {
 
 	endpoint := fmt.Sprintf("%s:%d", *host, *port)
 
-	http.HandleFunc("/", handler)
-	err = http.ListenAndServe(endpoint, nil)
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", handler)
 
-	if err != nil {
-		logger.Error("failed to start server, because %v", err)
-		os.Exit(1)
-	}
+	gracehttp.Serve(&http.Server{Addr: endpoint, Handler: mux})
+
+	/*
+		http.HandleFunc("/", handler)
+		err = http.ListenAndServe(endpoint, nil)
+
+		if err != nil {
+			logger.Error("failed to start server, because %v", err)
+			os.Exit(1)
+		}
+	*/
 
 	os.Exit(0)
 }
