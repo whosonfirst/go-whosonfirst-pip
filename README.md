@@ -176,6 +176,8 @@ Usage of ./bin/wof-pip-server:
     	   Where to write (@rcrowley go-metrics style) metrics to disk
   -metrics-as string
     	      Format metrics as... ? Valid options are "json" and "plain" (default "plain")
+  -pidfile string
+    	   Where to write a PID file for wof-pip-server (default "/var/run/wof-pip-server.pid")
   -port int
     	The port number to listen for requests on (default 8080)
   -strict
@@ -185,6 +187,14 @@ Usage of ./bin/wof-pip-server:
   -verboser
 	Enable really verbose logging, or log level "debug"
 ```
+
+You can force `wof-pip-server` to reindex itself by sending a `USR2` signal to the server's process ID (which is recorded in the file specfied by the `pidfile` argument). For example:
+
+```
+kill -USR2 `cat /var/run/wof-pip-server.pid`
+```
+
+The server will return `502 Service Unavailable` errors to all requests made during the indexing process.
 
 #### wof-pip-proxy
 
