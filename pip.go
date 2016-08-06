@@ -185,7 +185,7 @@ func (p WOFPointInPolygon) IndexGeoJSONFile(path string) error {
 	ttl := float64(d) / 1e9
 
 	if ttl > 0.01 {
-		p.Logger.Warning("scheduling %s for pre-caching because its time to load exceeds 0.01 seconds: %f", path, ttl)
+		p.Logger.Debug("scheduling %s for pre-caching because its time to load exceeds 0.01 seconds: %f", path, ttl)
 		go p.LoadPolygonsForFeature(feature)
 	}
 
@@ -199,7 +199,7 @@ func (p WOFPointInPolygon) IndexGeoJSONFeature(feature *geojson.WOFFeature) erro
 	geom_type, ok := body.Path("geometry.type").Data().(string)
 
 	if ok && geom_type == "Point" {
-		p.Logger.Warning("feature is a Point type so I am ignoring it...")
+		p.Logger.Debug("feature is a Point type so I am ignoring it...")
 		return nil
 	}
 

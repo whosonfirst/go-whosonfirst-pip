@@ -32,6 +32,7 @@ func main() {
 	var format = flag.String("metrics-as", "plain", "Format metrics as... ? Valid options are \"json\" and \"plain\"")
 	var cors = flag.Bool("cors", false, "Enable CORS headers")
 	var procs = flag.Int("procs", (runtime.NumCPU() * 2), "The number of concurrent processes to clone data with")
+	var pidfile = flag.String("pidfile", "/var/run/wof-pip-server.pid", "Where to write a PID file for wof-pip-server")
 
 	flag.Parse()
 	args := flag.Args()
@@ -127,21 +128,53 @@ func main() {
 		_ = p.SendMetricsTo(m_writer, 60e9, *format)
 	}
 
-	t1 := time.Now()
+	indexing := true
+	ch := make(chan bool)
 
-	for _, path := range args {
-		p.IndexMetaFile(path)
-	}
+	go func() {
+		<-ch
+		indexing = false
+	}()
 
-	t2 := float64(time.Since(t1)) / 1e9
+	go func() {
 
-	p.Logger.Status("indexed %d records in %.3f seconds", p.Rtree.Size(), t2)
+		fh, err := os.Create(*pidfile)
 
-	for pt, count := range p.Placetypes {
-		p.Logger.Status("indexed %s: %d", pt, count)
-	}
+		if err != nil {
+			panic(err)
+		}
+
+		defer fh.Close()
+
+		t1 := time.Now()
+
+		for _, path := range args {
+			p.IndexMetaFile(path)
+		}
+
+		t2 := float64(time.Since(t1)) / 1e9
+		p.Logger.Status("indexed %d records in %.3f seconds", p.Rtree.Size(), t2)
+
+		/*
+			for pt, count := range p.Placetypes {
+				p.Logger.Status("indexed %s: %d", pt, count)
+			}
+		*/
+
+		pid := os.Getpid()
+		strpid := strconv.Itoa(pid)
+
+		fh.Write([]byte(strpid))
+
+		ch <- true
+	}()
 
 	handler := func(rsp http.ResponseWriter, req *http.Request) {
+
+		if indexing == true {
+			http.Error(rsp, "indexing records", http.StatusServiceUnavailable)
+			return
+		}
 
 		query := req.URL.Query()
 
@@ -242,16 +275,6 @@ func main() {
 	mux.HandleFunc("/", handler)
 
 	gracehttp.Serve(&http.Server{Addr: endpoint, Handler: mux})
-
-	/*
-		http.HandleFunc("/", handler)
-		err = http.ListenAndServe(endpoint, nil)
-
-		if err != nil {
-			logger.Error("failed to start server, because %v", err)
-			os.Exit(1)
-		}
-	*/
 
 	os.Exit(0)
 }
