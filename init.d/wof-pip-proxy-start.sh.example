@@ -14,13 +14,20 @@
 
 WOF_DATA=YOUR_WOF_DATA
 
-PIP_DAEMON=YOUR_WOF_PIP_DAEMON
+# these are part of https://github.com/whosonfirst/go-whosonfirst-pip
 
-PROXY_DAEMON=YOUR_PROXY_SERVER_PATH
+PIP_DAEMON=/path/to/wof-pip-server
+PROXY_DAEMON=/path/to/wof-pip-proxy
+
+# this can be generated with https://github.com/whosonfirst/go-whosonfirst-pip/blob/master/utils/mk-wof-config.py
+
 PROXY_CONFIG=YOUR_PROXY_CONFIG
 
+# this is part of https://github.com/whosonfirst/py-mapzen-whosonfirst-pip-server  
+
+START_DAEMON=/path/to/wof-pip-start-proxy
 START_USER=YOUR_PROXY_SERVER_USER
-START_DAEMON=YOUR_START_DAEMON
+
 
 START_ARGS=""
 
