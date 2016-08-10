@@ -1,6 +1,6 @@
 CWD=$(shell pwd)
-# GOPATH := $(CWD)/vendor:$(CWD)
-GOPATH := $(CWD)
+GOPATH := $(CWD)/vendor:$(CWD)
+# GOPATH := $(CWD)
 
 prep:
 	if test -d pkg; then rm -rf pkg; fi
