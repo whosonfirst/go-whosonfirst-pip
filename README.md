@@ -14,7 +14,7 @@ In addition to clone all the vendored dependencies (stored in the [vendor](vendo
 
 If you don't have `make` installed on your computer or just want to do things by hand then [you should spend some time reading the Makefile](Makefile) itself. The revelant "targets" (which are the equivalent of commands in Makefile-speak) that you will need are `deps` for fetching dependencies, `self` for cloning files and `bin` for building the command line tools.
 
-_If you're a Go person and wondering why we don't just append the `vendor` directory to `GOPATH` and can explain to us [how to make Git and Go and submodules](https://github.com/facebookgo/grace/issues/27) and the presence (or absence...) of `.git` directories in the vendor-ed package all play nicely together please please please [drop us a line](https://github.com/whosonfirst/go-whosonfirst-pip/issues). It the meantime this is the devil we know..._
+_If you're a Go person and wondering why we don't just append the `vendor` directory to `GOPATH` and can explain to us [how to make Git and Go and submodules](https://github.com/facebookgo/grace/issues/27) and the presence (or absence...) of `.git` directories in the vendor-ed packages all play nicely together please please please [drop us a line](https://github.com/whosonfirst/go-whosonfirst-pip/issues). It the meantime this is the devil we know..._
 
 ## Usage
 
