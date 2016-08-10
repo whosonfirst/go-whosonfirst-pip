@@ -1,1 +1,3 @@
 .git
+src/github.com/lib/pq/.travis.sh
+src/github.com/lib/pq/certs/bogus_root.crt
