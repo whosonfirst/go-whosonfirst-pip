@@ -162,6 +162,8 @@ You can enable strict placetype checking on the server-side by specifying the `-
 ```
 $> ./bin/wof-pip-server -help
 Usage of ./bin/wof-pip-server:
+  -cache_all
+	Just cache everything, regardless of size
   -cache_size int
     	      The number of WOF records with large geometries to cache (default 1024)
   -cache_trigger int
@@ -170,6 +172,12 @@ Usage of ./bin/wof-pip-server:
 	Enable CORS headers
   -data string
     	The data directory where WOF data lives, required
+  -gracehttp.log
+	Enable logging. (default true)
+  -host string
+    	The hostname to listen for requests on (default "localhost")
+  -loglevel string
+    	    Log level for reporting (default "info")
   -logs string
     	Where to write logs to disk
   -metrics string
@@ -177,15 +185,13 @@ Usage of ./bin/wof-pip-server:
   -metrics-as string
     	      Format metrics as... ? Valid options are "json" and "plain" (default "plain")
   -pidfile string
-    	   Where to write a PID file for wof-pip-server (default "/var/run/wof-pip-server.pid")
+    	   Where to write a PID file for wof-pip-server. If empty the PID file will be written to wof-pip-server.pid in the current directory
   -port int
     	The port number to listen for requests on (default 8080)
+  -procs int
+    	 The number of concurrent processes to clone data with (default 16)
   -strict
 	Enable strict placetype checking
-  -verbose
-	Enable verbose logging, or log level "info"
-  -verboser
-	Enable really verbose logging, or log level "debug"
 ```
 
 You can force `wof-pip-server` to reindex itself by sending a `USR2` signal to the server's process ID (which is recorded in the file specfied by the `pidfile` argument). For example:
