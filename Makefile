@@ -13,7 +13,7 @@ self:   prep rmdeps
 rmdeps:
 	if test -d src; then rm -rf src; fi 
 
-build:	deps fmt bin
+build:	fmt bin
 
 deps:	rmdeps
 	@GOPATH=$(GOPATH) go get -u "github.com/whosonfirst/go-whosonfirst-geojson"
