@@ -11,10 +11,12 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"runtime"
 	"strconv"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -169,16 +171,24 @@ func main() {
 		t2 := float64(time.Since(t1)) / 1e9
 		p.Logger.Status("indexed %d records in %.3f seconds", p.Rtree.Size(), t2)
 
-		/*
-			for pt, count := range p.Placetypes {
-				p.Logger.Status("indexed %s: %d", pt, count)
-			}
-		*/
-
 		pid := os.Getpid()
 		strpid := strconv.Itoa(pid)
 
 		fh.Write([]byte(strpid))
+
+		p.Logger.Status("create PID file %s", *pidfile)
+
+		sigs := make(chan os.Signal, 1)
+		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
+		go func() {
+			<-sigs
+
+			p.Logger.Status("remove PID file %s", *pidfile)
+
+			os.Remove(*pidfile)
+			os.Exit(0)
+		}()
 
 		ch <- true
 	}()
