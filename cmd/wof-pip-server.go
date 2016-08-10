@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"sync"
@@ -32,7 +33,7 @@ func main() {
 	var format = flag.String("metrics-as", "plain", "Format metrics as... ? Valid options are \"json\" and \"plain\"")
 	var cors = flag.Bool("cors", false, "Enable CORS headers")
 	var procs = flag.Int("procs", (runtime.NumCPU() * 2), "The number of concurrent processes to clone data with")
-	var pidfile = flag.String("pidfile", "/var/run/wof-pip-server.pid", "Where to write a PID file for wof-pip-server")
+	var pidfile = flag.String("pidfile", "", "Where to write a PID file for wof-pip-server. If empty the PID file will be written to wof-pip-server.pid in the current directory")
 
 	flag.Parse()
 	args := flag.Args()
@@ -137,6 +138,19 @@ func main() {
 	}()
 
 	go func() {
+
+		if *pidfile == "" {
+
+			cwd, err := os.Getwd()
+
+			if err != nil {
+				panic(err)
+			}
+
+			fname := fmt.Sprintf("%s.pid", os.Args[0])
+
+			*pidfile = filepath.Join(cwd, fname)
+		}
 
 		fh, err := os.Create(*pidfile)
 
