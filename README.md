@@ -4,14 +4,6 @@ An in-memory point-in-polygon (reverse geocoding) package for Who's On First dat
 
 ## Set up
 
-First make sure you've configured the `GOPATH` environment variable, like this:
-
-```
-export GOPATH=`pwd`
-```
-
-_Adjust accordingly if you are using a shell other than Bash._
-
 The easiest way to install all the dependencies and compile all of the code and command line tools is to use the handy Makefile that is included with this repository, like this:
 
 ```
@@ -22,6 +14,8 @@ make bin
 In addition to fetching all the necessary dependencies this will clone the `go-whosonfirst-pip` packages in to the `src` directory (along with all the dependencies) which is a thing you need to do because of the way Go expects code to organized. It's kind of weird and annoying but also shouting-at-the-sky territory so the Makefile is designed to hide the bother from you.
 
 If you don't have `make` installed on your computer or just want to do things by hand then [you should spend some time reading the Makefile](Makefile) itself. The revelant "targets" (which are the equivalent of commands in Makefile-speak) that you will need are `deps` for fetching dependencies, `self` for cloning files and `bin` for building the command line tools.
+
+_There are vendored versions of the dependencies included with this repository but we've disabled use of them (in the Makefile) until we can sort out [why one set of packages aren't being vendored the way we'd expect](https://github.com/facebookgo/grace/issues/27)._
 
 ## Usage
 
