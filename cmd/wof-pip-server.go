@@ -36,6 +36,7 @@ func main() {
 	var cors = flag.Bool("cors", false, "Enable CORS headers")
 	var procs = flag.Int("procs", (runtime.NumCPU() * 2), "The number of concurrent processes to clone data with")
 	var pidfile = flag.String("pidfile", "", "Where to write a PID file for wof-pip-server. If empty the PID file will be written to wof-pip-server.pid in the current directory")
+	var nopid = flag.Bool("nopid", false, "Do not try to write a PID file")
 
 	flag.Parse()
 	args := flag.Args()
@@ -141,6 +142,22 @@ func main() {
 
 	go func() {
 
+		if *nopid {
+
+			t1 := time.Now()
+
+			for _, path := range args {
+				p.Logger.Status("indexing %s", path)
+				p.IndexMetaFile(path)
+			}
+
+			t2 := float64(time.Since(t1)) / 1e9
+			p.Logger.Status("indexed %d records in %.3f seconds", p.Rtree.Size(), t2)
+
+			ch <- true
+			return
+		}
+
 		if *pidfile == "" {
 
 			cwd, err := os.Getwd()
@@ -165,6 +182,7 @@ func main() {
 		t1 := time.Now()
 
 		for _, path := range args {
+			p.Logger.Status("indexing %s", path)
 			p.IndexMetaFile(path)
 		}
 
