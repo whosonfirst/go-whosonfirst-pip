@@ -15,7 +15,7 @@ rmdeps:
 
 build:	fmt bin
 
-deps:	rmdeps
+deps:	
 	@GOPATH=$(GOPATH) go get -u "github.com/whosonfirst/go-whosonfirst-geojson"
 	@GOPATH=$(GOPATH) go get -u "github.com/whosonfirst/go-whosonfirst-utils"
 	@GOPATH=$(GOPATH) go get -u "github.com/whosonfirst/go-whosonfirst-csv"
@@ -25,7 +25,7 @@ deps:	rmdeps
 	@GOPATH=$(GOPATH) go get -u "github.com/rcrowley/go-metrics"
 	@GOPATH=$(GOPATH) go get -u "github.com/facebookgo/grace/gracehttp"
 
-vendor: deps
+vendor-deps: rmdeps deps
 	if test ! -d vendor; then mkdir vendor; fi
 	if test -d vendor/src; then rm -rf vendor/src; fi
 	cp -r src vendor/src
