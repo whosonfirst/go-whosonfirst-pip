@@ -6,16 +6,32 @@ package main
 import (
 	"flag"
 	"fmt"
-	utils "github.com/whosonfirst/go-whosonfirst-utils"
+	"github.com/whosonfirst/go-whosonfirst-utils"
+	"log"
 )
 
 func main() {
+
+	var geom = flag.Bool("geom", false, "Only hash a feature's geometry")
 
 	flag.Parse()
 	args := flag.Args()
 
 	for _, path := range args {
-		hash, _ := utils.HashFile(path)
+
+		var hash string
+		var err error
+
+		if *geom {
+			hash, err = utils.HashGeomFromFile(path)
+		} else {
+			hash, err = utils.HashFile(path)
+		}
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		fmt.Println(hash)
 	}
 }

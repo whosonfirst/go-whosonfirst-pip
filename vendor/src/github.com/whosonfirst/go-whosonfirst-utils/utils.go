@@ -3,14 +3,78 @@ package utils
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"encoding/json"
+	"github.com/tidwall/gjson"
 	"io/ioutil"
+	_ "log"
 	"path"
 	"strconv"
 	"strings"
 )
 
-// this should be a woo-woo interface for Local and Remote datastores
-// but not today (20151013/thisisaaronland)
+func HashFile(path string) (string, error) {
+
+	body, err := ioutil.ReadFile(path)
+
+	if err != nil {
+		return "", err
+	}
+
+	hash := HashBytes(body)
+	return hash, nil
+}
+
+func HashGeomFromFile(path string) (string, error) {
+
+	body, err := ioutil.ReadFile(path)
+
+	if err != nil {
+		return "", err
+	}
+
+	return HashGeomFromFeature(body)
+}
+
+func HashGeomFromFeature(feature []byte) (string, error) {
+
+	geom := gjson.GetBytes(feature, "geometry")
+	body, err := json.Marshal(geom.Value())
+
+	if err != nil {
+		return "", err
+	}
+
+	hash := HashBytes(body)
+	return hash, nil
+}
+
+func HashFromJSON(raw []byte) (string, error) {
+
+	var geom interface{}
+
+	err := json.Unmarshal(raw, &geom)
+
+	if err != nil {
+		return "", err
+	}
+
+	body, err := json.Marshal(geom)
+
+	if err != nil {
+		return "", err
+	}
+
+	hash := HashBytes(body)
+	return hash, nil
+}
+
+func HashBytes(body []byte) string {
+
+	hash := md5.Sum(body)
+	return hex.EncodeToString(hash[:])
+}
+
+// THESE ARE ALL DEPRECATED AND REPLACED BY go-whosonfirst-uri
 
 func Id2Fname(id int) (fname string) {
 
@@ -55,18 +119,4 @@ func Id2AbsPath(root string, id int) (abs_path string) {
 	abs_path = path.Join(root, rel)
 
 	return abs_path
-}
-
-func HashFile(path string) (string, error) {
-
-	body, err := ioutil.ReadFile(path)
-
-	if err != nil {
-		return "", err
-	}
-
-	hash := md5.Sum(body)
-	str_hash := hex.EncodeToString(hash[:])
-
-	return str_hash, nil
 }

@@ -7,6 +7,7 @@ import (
 	gabs "github.com/jeffail/gabs"
 	geo "github.com/kellydunn/golang-geo"
 	ioutil "io/ioutil"
+	"log"
 	"strconv"
 	"sync"
 )
@@ -253,7 +254,17 @@ func (wof WOFFeature) Hierarchy() []map[string]int {
 
 			if !ok {
 
-				str_id, ok := v.Data().(string)
+				// See this. It's important. We are pairing it with `ok` below
+				// and if we don't pre-declare the variable then we end up having
+				// to do `str_id, ok := v.Data().(string)` which have the awesome
+				// side-effect of creating a locally-scope instance (of the `ok`
+				// variable. At which point it will appear to the outside world
+				// that the type-casting (to a string) will have failed even though
+				// it hasn't. Computers... amirite? (20161128/thisisaaronland)
+
+				var str_id string
+
+				str_id, ok = v.Data().(string)
 
 				if ok {
 
@@ -268,7 +279,8 @@ func (wof WOFFeature) Hierarchy() []map[string]int {
 			}
 
 			if !ok {
-				id = 0
+				log.Println("Failed to type cast (%s = %s) in to a WOF ID", k, v)
+				id = -1
 			}
 
 			hier[k] = id
