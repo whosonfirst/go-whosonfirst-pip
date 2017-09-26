@@ -2,6 +2,10 @@
 
 An in-memory point-in-polygon (reverse geocoding) package for Who's On First data
 
+## Important
+
+This package is no longer being actively maintained. The new-new is now happening in the [go-whosonfirst-pip-v2](https://github.com/whosonfirst/go-whosonfirst-pip-v2) package. I'm not super thrilled about it either but trying to maintain a fully backward-compatible interface across all the things started to smell like quicksand and yak-hair. The future is a lie...
+
 ## Set up
 
 The easiest way to install all the dependencies and compile all of the code and command line tools is to use the handy Makefile that is included with this repository, like this:
@@ -528,6 +532,7 @@ First, these should not be confused with malformed GeoJSON files. Some records i
 
 ## See also
 
+* https://github.com/whosonfirst/go-whosonfirst-pip-v2
 * https://github.com/whosonfirst/chef-wof_pip
 * https://www.github.com/dhconnelly/rtreego
 * https://github.com/hashicorp/golang-lru
